@@ -6,13 +6,13 @@ DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.r
 You will need python-opencv and threading packages:
 
 ```
-pip install python-opencv
-pip install threading
+$ pip install python-opencv
+$ pip install threading
 ```
 
 ## Usage
 ```
-git clone https://github.com/damiafuentes/TelloSDKPy.git
+$ git clone https://github.com/damiafuentes/TelloSDKPy.git
 ```
 
 ```
