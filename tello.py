@@ -1,6 +1,6 @@
 # coding=utf-8
 import socket
-from decorators import *
+from TelloSDKPy.decorators import *
 import time
 import threading
 import cv2

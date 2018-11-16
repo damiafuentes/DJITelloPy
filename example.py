@@ -1,4 +1,4 @@
-from tello import Tello
+from TelloSDKPy.tello import Tello
 import time
 import cv2
 
@@ -27,11 +27,25 @@ def start():
 
         ch = cv2.waitKey(1)
         if ch == ord('t'):
-            if not tello.takeoff():
-                print("%s, Not taken off" % (time.time() - start_time))
+            tello.takeoff()
         if ch == ord('l'):
-            if not tello.land():
-                print("%s, Not landed" % (time.time() - start_time))
+            tello.land()
+        if ch == ord('a'):
+            tello.move_left(20)
+        if ch == ord('d'):
+            tello.move_right(20)
+        if ch == ord('w'):
+            tello.move_forward(20)
+        if ch == ord('d'):
+            tello.move_back(20)
+        if ch == ord('e'):
+            tello.rotate_counter_clockwise(450)
+        if ch == ord('r'):
+            tello.rotate_clockwise(450)
+        if ch == ord('f'):
+            tello.move_up(20)
+        if ch == ord('g'):
+            tello.move_down(20)
         if ch == 27:
             frame_read.stopped = True
             break
