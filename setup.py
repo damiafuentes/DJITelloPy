@@ -3,14 +3,14 @@ from distutils.core import setup
 setup(
     name='djitellopy',  # How you named your package folder (MyLib)
     packages=['djitellopy'],  # Chose the same as "name"
-    version='1.4',  # Start with a small number and increase it with every change you make
+    version='1.5',  # Start with a small number and increase it with every change you make
     license='MIT',  # Chose a license from here: https://help.github.com/articles/licensing-a-repository
     description='DJI Tello drone python interface using the official Tello SDK including the video stream.',
     # Give a short description about your library
     author='Damià Fuentes Escoté',  # Type in your name
     author_email='damiafuentes@hotmail.com',  # Type in your E-Mail
     url='https://github.com/damiafuentes',  # Provide either the link to your github or to your website
-    download_url='https://github.com/damiafuentes/TelloSDKPy/archive/v_1.4.tar.gz',  # I explain this later on
+    download_url='https://github.com/damiafuentes/TelloSDKPy/archive/v_1.5.tar.gz',  # I explain this later on
     keywords=['tello', 'dji', 'drone', 'sdk', 'official sdk'],  # Keywords that define your package best
     install_requires=[  # I get to this in a second
         'numpy',
