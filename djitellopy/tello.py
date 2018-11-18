@@ -4,6 +4,7 @@ import time
 import threading
 import cv2
 from threading import Thread
+from djitellopy.decorators import accepts
 
 
 class Tello:
