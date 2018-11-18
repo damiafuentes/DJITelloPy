@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name='djitellopy',  # How you named your package folder (MyLib)
     packages=['djitellopy'],  # Chose the same as "name"
-    version='1.0',  # Start with a small number and increase it with every change you make
+    version='1.1',  # Start with a small number and increase it with every change you make
     license='MIT',  # Chose a license from here: https://help.github.com/articles/licensing-a-repository
     description='DJI Tello drone python interface using the official Tello SDK including the video stream.',
     # Give a short description about your library
