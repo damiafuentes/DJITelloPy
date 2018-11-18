@@ -1,4 +1,4 @@
-from TelloSDKPy.tello import Tello
+from TelloSDKPy.djitellopy import Tello
 import cv2
 import pygame
 from pygame.locals import *
