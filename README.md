@@ -6,8 +6,10 @@ Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/e
 Compatible with python 2.7 and 3.6.
 
 ## Prerequisites
-
-
+```
+$ pip install djitellopy
+```
+or
 ```
 $ git clone https://github.com/damiafuentes/TelloSDKPy.git
 $ cd TelloSDKPy
