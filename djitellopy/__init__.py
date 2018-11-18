@@ -1,1 +1,1 @@
-from TelloSDKPy.djitellopy.tello import Tello
+from djitellopy.tello import Tello
