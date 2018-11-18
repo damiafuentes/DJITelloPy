@@ -8,15 +8,16 @@ from threading import Thread
 
 
 class Tello:
-    """Python wrapper to interact with the Ryze Tello drone.
-    Tello documentation:
+    """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
+    Tello API documentation:
     https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf
     """
     # Send and receive commands, client socket
     UDP_IP = '192.168.10.1'
     UDP_PORT = 8889
-    RESPONSE_TIMEOUT = .3  # in seconds
-    TIME_BTW_COMMANDS = .5  # in seconds
+    RESPONSE_TIMEOUT = 0.5  # in seconds
+    TIME_BTW_COMMANDS = 0.5  # in seconds
+    TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
     last_received_command = time.time()
 
     # Video stream, server socket
@@ -84,7 +85,7 @@ class Tello:
         return self.streamoff()
 
     @accepts(command=str)
-    def send_command(self, command):
+    def send_command_with_return(self, command):
         """Send command to Tello and wait for its response.
         Return:
             bool: True for successful, False for unsuccessful
@@ -104,7 +105,7 @@ class Tello:
                 print('Timeout exceed on command ' + command)
                 return False
 
-        print('Response: ' + self.response)
+        print('Response: ' + str(self.response))
 
         response = self.response.decode('utf-8')
 
@@ -113,6 +114,33 @@ class Tello:
         self.last_received_command = time.time() * 1000
 
         return response
+
+    @accepts(command=str)
+    def send_command_without_return(self, command):
+        """Send command to Tello without expecting a response. Use this method when you want to send a command
+        continuously
+            - go x y z speed: Tello fly to x y z in speed (cm/s)
+                x: 20-500
+                y: 20-500
+                z: 20-500
+                speed: 10-100
+            - curve x1 y1 z1 x2 y2 z2 speed: Tello fly a curve defined by the current and two given coordinates with
+                speed (cm/s). If the arc radius is not within the range of 0.5-10 meters, it responses false.
+                x/y/z can’t be between -20 – 20 at the same time .
+                x1, x2: 20-500
+                y1, y2: 20-500
+                z1, z2: 20-500
+                speed: 10-60
+            - rc a b c d: Send RC control via four channels.
+                a: left/right (-100~100)
+                b: forward/backward (-100~100)
+                c: up/down (-100~100)
+                d: yaw (-100~100)
+        """
+        # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
+
+        print('Send command (no expect response): ' + command)
+        self.clientSocket.sendto(command.encode('utf-8'), self.address)
 
     @accepts(command=str)
     def send_control_command(self, command):
@@ -136,31 +164,14 @@ class Tello:
                 r (right)
                 f (forward)
                 b (back)
-            - go x y z speed: Tello fly to x y z in speed (cm/s)
-                x: 20-500
-                y: 20-500
-                z: 20-500
-                speed: 10-100
-            - curve x1 y1 z1 x2 y2 z2 speed: Tello fly a curve defined by the current and two given coordinates with
-                speed (cm/s). If the arc radius is not within the range of 0.5-10 meters, it responses false.
-                x/y/z can’t be between -20 – 20 at the same time .
-                x1, x2: 20-500
-                y1, y2: 20-500
-                z1, z2: 20-500
-                speed: 10-60
             - speed x: set speed to x cm/s. x: 10-100
-            - rc a b c d: Send RC control via four channels.
-                a: left/right (-100~100)
-                b: forward/backward (-100~100)
-                c: up/down (-100~100)
-                d: yaw (-100~100)
             - wifi ssid pass: Set Wi-Fi with SSID password
 
         Return:
             bool: True for successful, False for unsuccessful
         """
 
-        response = self.send_command(command)
+        response = self.send_command_with_return(command)
 
         if response == 'OK' or response == 'ok':
             return True
@@ -184,7 +195,7 @@ class Tello:
             bool: True for successful, False for unsuccessful
         """
 
-        response = self.send_command(command)
+        response = self.send_command_with_return(command)
 
         try:
             response = str(response)
@@ -229,7 +240,8 @@ class Tello:
         return self.send_control_command("land")
 
     def streamon(self):
-        """Set video stream on
+        """Set video stream on. If the response is 'Unknown command' means you have to update the Tello firmware. That
+        can be done through the Tello app.
         Returns:
             bool: True for successful, False for unsuccessful
         """
@@ -243,7 +255,7 @@ class Tello:
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        result = self.send_control_command("streamon")
+        result = self.send_control_command("streamoff")
         if result is True:
             self.stream_on = False
         return result
@@ -348,7 +360,7 @@ class Tello:
     def rotate_clockwise(self, x):
         """Tello rotate x degree clockwise.
         Arguments:
-            x: 1-3600
+            x: 1-360
 
         Returns:
             bool: True for successful, False for unsuccessful
@@ -416,7 +428,7 @@ class Tello:
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        return self.send_control_command('go %s %s %s %s' % (x, y, z, speed))
+        return self.send_command_without_return('go %s %s %s %s' % (x, y, z, speed))
 
     @accepts(x1=int, y1=int, z1=int, x2=int, y2=int, z2=int, speed=int)
     def go_xyz_speed(self, x1, y1, z1, x2, y2, z2, speed):
@@ -434,7 +446,7 @@ class Tello:
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        return self.send_control_command('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
+        return self.send_command_without_return('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
 
     @accepts(x=int)
     def set_speed(self, x):
@@ -447,18 +459,25 @@ class Tello:
         """
         return self.send_control_command("speed " + str(x))
 
-    @accepts(x=int, y=int, z=int, speed=int)
-    def send_rc_control(self, a, b, c, d):
-        """Send RC control via four channels.
+    last_rc_control_sent = 0
+
+    @accepts(left_right_velocity=int, forward_backward_velocity=int, up_down_velocity=int, yaw_velocity=int)
+    def send_rc_control(self, left_right_velocity, forward_backward_velocity, up_down_velocity, yaw_velocity):
+        """Send RC control via four channels. Command is sent every self.TIME_BTW_RC_CONTROL_COMMANDS seconds.
         Arguments:
-            a: -100~100 (left/right)
-            b: -100~100 (forward/backward)
-            c: -100~100 (up/down)
-            d: -100~100 (yaw)
+            left_right_velocity: -100~100 (left/right)
+            forward_backward_velocity: -100~100 (forward/backward)
+            up_down_velocity: -100~100 (up/down)
+            yaw_velocity: -100~100 (yaw)
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        return self.send_control_command('rc %s %s %s %s' % (a, b, c, d))
+        if int(time.time() * 1000) - self.last_rc_control_sent < self.TIME_BTW_RC_CONTROL_COMMANDS:
+            pass
+        else:
+            self.last_rc_control_sent = int(time.time() * 1000)
+            return self.send_command_without_return('rc %s %s %s %s' % (left_right_velocity, forward_backward_velocity,
+                                                                        up_down_velocity, yaw_velocity))
 
     def set_wifi_with_ssid_password(self):
         """Set Wi-Fi with SSID password.
