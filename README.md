@@ -12,7 +12,7 @@ $ pip install djitellopy
 or
 ```
 $ git clone https://github.com/damiafuentes/TelloSDKPy.git
-$ cd TelloSDKPy
+$ cd DJITelloPy
 $ pip install requirements.txt
 ```
 
