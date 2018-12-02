@@ -5,7 +5,7 @@ Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/e
 
 Compatible with python 2.7 and 3.6.
 
-## Prerequisites
+## Install
 ```
 $ pip install djitellopy
 ```
