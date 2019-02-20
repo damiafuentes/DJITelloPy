@@ -21,7 +21,7 @@ $ pip install requirements.txt
 ### Simple example
 
 ```
-from TelloSDKPy.tello import Tello
+from djitellopy import Tello
 import cv2
 import time
 
