@@ -524,7 +524,7 @@ class Tello:
             False: Unsuccessful
             int: 0-90
         """
-        return self.send_read_command('temperature?')
+        return self.send_read_command('temp?')
 
     def get_attitude(self):
         """Get IMU attitude data
