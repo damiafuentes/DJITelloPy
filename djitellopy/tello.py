@@ -479,12 +479,19 @@ class Tello:
             return self.send_command_without_return('rc %s %s %s %s' % (left_right_velocity, forward_backward_velocity,
                                                                         up_down_velocity, yaw_velocity))
 
-    def set_wifi_with_ssid_password(self):
-        """Set Wi-Fi with SSID password.
+    def set_wifi_credentials(self, ssid, password):
+        """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        return self.send_control_command('wifi ssid pass')
+        return self.send_control_command('wifi %s %s' % (ssid, password))
+
+    def connect_to_wifi(self, ssid, password):
+        """Connects to the Wi-Fi with SSID and password.
+        Returns:
+            bool: True for successful, False for unsuccessful
+        """
+        return self.send_control_command('ap %s %s' % (ssid, password))
 
     def get_speed(self):
         """Get current speed (cm/s)
