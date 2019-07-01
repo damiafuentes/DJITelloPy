@@ -431,7 +431,7 @@ class Tello:
         return self.send_command_without_return('go %s %s %s %s' % (x, y, z, speed))
 
     @accepts(x1=int, y1=int, z1=int, x2=int, y2=int, z2=int, speed=int)
-    def go_xyz_speed(self, x1, y1, z1, x2, y2, z2, speed):
+    def curve_xyz_speed(self, x1, y1, z1, x2, y2, z2, speed):
         """Tello fly a curve defined by the current and two given coordinates with speed (cm/s).
             - If the arc radius is not within the range of 0.5-10 meters, it responses false.
             - x/y/z can’t be between -20 – 20 at the same time.
