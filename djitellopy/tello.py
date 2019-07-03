@@ -1,4 +1,5 @@
 # coding=utf-8
+import logging
 import socket
 import time
 import threading
@@ -19,6 +20,16 @@ class Tello:
     TIME_BTW_COMMANDS = 0.5  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
     last_received_command = time.time()
+
+    HANDLER = logging.StreamHandler()
+    FORMATTER = logging.Formatter('%(message)s')
+    HANDLER.setFormatter(FORMATTER)
+
+    LOGGER = logging.getLogger('djitellopy')
+    LOGGER.addHandler(HANDLER)
+    LOGGER.setLevel(logging.INFO)
+    # use logging.getLogger('djitellopy').setLevel(logging.<LEVEL>) in YOUR CODE
+    # to only receive logs of the desired level and higher
 
     # Video stream, server socket
     VS_UDP_IP = '0.0.0.0'
@@ -51,7 +62,7 @@ class Tello:
             try:
                 self.response, _ = self.clientSocket.recvfrom(1024)  # buffer size is 1024 bytes
             except Exception as e:
-                print(e)
+                self.LOGGER.error(e)
                 break
 
     def get_udp_video_address(self):
@@ -95,19 +106,19 @@ class Tello:
         if diff < self.TIME_BTW_COMMANDS:
             time.sleep(diff)
 
-        print('Send command: ' + command)
+        self.LOGGER.info('Send command: ' + command)
         timestamp = int(time.time() * 1000)
 
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
 
         while self.response is None:
             if (time.time() * 1000) - timestamp > self.RESPONSE_TIMEOUT * 1000:
-                print('Timeout exceed on command ' + command)
+                self.LOGGER.warning('Timeout exceed on command ' + command)
                 return False
 
-        print('Response: ' + str(self.response))
+        response = self.response.decode('utf-8').rstrip("\r\n")
 
-        response = self.response.decode('utf-8')
+        self.LOGGER.info('Response: ' + response)
 
         self.response = None
 
@@ -139,7 +150,7 @@ class Tello:
         """
         # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
 
-        print('Send command (no expect response): ' + command)
+        self.LOGGER.info('Send command (no expect response): ' + command)
         self.clientSocket.sendto(command.encode('utf-8'), self.address)
 
     @accepts(command=str)
@@ -200,7 +211,7 @@ class Tello:
         try:
             response = str(response)
         except TypeError as e:
-            print(e)
+            self.LOGGER.error(e)
             pass
 
         if ('error' not in response) and ('ERROR' not in response) and ('False' not in response):
@@ -211,10 +222,9 @@ class Tello:
         else:
             return self.return_error_on_send_command(command, response)
 
-    @staticmethod
-    def return_error_on_send_command(command, response):
+    def return_error_on_send_command(self, command, response):
         """Returns False and print an informative result code to show unsuccessful response"""
-        print('Command ' + command + ' was unsuccessful. Message: ' + str(response))
+        self.LOGGER.error('Command ' + command + ' was unsuccessful. Message: ' + str(response))
         return False
 
     def connect(self):
