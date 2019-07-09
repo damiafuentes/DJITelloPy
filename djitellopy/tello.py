@@ -15,9 +15,10 @@ class Tello:
     # Send and receive commands, client socket
     UDP_IP = '192.168.10.1'
     UDP_PORT = 8889
-    RESPONSE_TIMEOUT = 0.5  # in seconds
-    TIME_BTW_COMMANDS = 0.5  # in seconds
+    RESPONSE_TIMEOUT = 7  # in seconds
+    TIME_BTW_COMMANDS = 1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
+    RETRY_COUNT = 3
     last_received_command = time.time()
 
     # Video stream, server socket
@@ -30,14 +31,25 @@ class Tello:
 
     stream_on = False
 
-    def __init__(self):
-        # To send comments
-        self.address = (self.UDP_IP, self.UDP_PORT)
-        self.clientSocket = socket.socket(socket.AF_INET,  # Internet
-                                          socket.SOCK_DGRAM)  # UDP
-        self.clientSocket.bind(('', self.UDP_PORT))  # For UDP response (receiving data)
+    def __init__(self,
+        host='192.168.10.1',
+        port=8889,
+        client_socket=None,
+        enable_exceptions=False,
+        retry_count=3):
+
+        self.address = (host, port)
         self.response = None
         self.stream_on = False
+        self.enable_exceptions = enable_exceptions
+        self.retry_count = retry_count
+
+        if client_socket:
+            self.clientSocket = client_socket
+        else:
+            self.clientSocket = socket.socket(socket.AF_INET,  # Internet
+                                            socket.SOCK_DGRAM)  # UDP
+            self.clientSocket.bind(('', self.UDP_PORT))  # For UDP response (receiving data)
 
         # Run tello udp receiver on background
         thread = threading.Thread(target=self.run_udp_receiver, args=())
@@ -171,12 +183,13 @@ class Tello:
             bool: True for successful, False for unsuccessful
         """
 
-        response = self.send_command_with_return(command)
+        for i in range(0, self.retry_count):
+            response = self.send_command_with_return(command)
 
-        if response == 'OK' or response == 'ok':
-            return True
-        else:
-            return self.return_error_on_send_command(command, response)
+            if response == 'OK' or response == 'ok':
+                return True
+
+        return self.return_error_on_send_command(command, response, self.enable_exceptions)
 
     @accepts(command=str)
     def send_read_command(self, command):
@@ -209,13 +222,17 @@ class Tello:
             else:
                 return response
         else:
-            return self.return_error_on_send_command(command, response)
+            return self.return_error_on_send_command(command, response, self.enable_exceptions)
 
     @staticmethod
-    def return_error_on_send_command(command, response):
+    def return_error_on_send_command(command, response, enable_exceptions):
         """Returns False and print an informative result code to show unsuccessful response"""
-        print('Command ' + command + ' was unsuccessful. Message: ' + str(response))
-        return False
+        msg = 'Command ' + command + ' was unsuccessful. Message: ' + str(response)
+        if enable_exceptions:
+            raise Exception(msg)
+        else:
+            print(msg)
+            return False
 
     def connect(self):
         """Entry SDK mode
@@ -564,6 +581,22 @@ class Tello:
             str: snr
         """
         return self.send_read_command('wifi?')
+
+    def get_sdk_version(self):
+        """Get SDK Version
+        Returns:
+            False: Unsuccessful
+            str: SDK Version
+        """
+        return self.send_read_command('sdk?')
+
+    def get_serial_number(self):
+        """Get Serial Number
+        Returns:
+            False: Unsuccessful
+            str: Serial Number
+        """
+        return self.send_read_command('sn?')
 
     def end(self):
         """Call this method when you want to end the tello object"""
