@@ -35,7 +35,7 @@ class Tello:
         host='192.168.10.1',
         port=8889,
         client_socket=None,
-        enable_exceptions=False,
+        enable_exceptions=True,
         retry_count=3):
 
         self.address = (host, port)
@@ -464,6 +464,63 @@ class Tello:
             bool: True for successful, False for unsuccessful
         """
         return self.send_command_without_return('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
+
+    @accepts(x=int, y=int, z=int, speed=int, mid=int)
+    def go_xyz_speed_mid(self, x, y, z, speed, mid):
+        """Tello fly to x y z in speed (cm/s) relative to mission pad iwth id mid
+        Arguments:
+            x: -500-500
+            y: -500-500
+            z: -500-500
+            speed: 10-100
+            mid: 1-8
+        Returns:
+            bool: True for successful, False for unsuccessful
+        """
+        return self.send_control_command('go %s %s %s %s m%s' % (x, y, z, speed, mid))
+
+    @accepts(x1=int, y1=int, z1=int, x2=int, y2=int, z2=int, speed=int, mid=int)
+    def curve_xyz_speed_mid(self, x1, y1, z1, x2, y2, z2, speed, mid):
+        """Tello fly to x2 y2 z2 over x1 y1 z1 in speed (cm/s) relative to mission pad with id mid
+        Arguments:
+            x1: -500-500
+            y1: -500-500
+            z1: -500-500
+            x2: -500-500
+            y2: -500-500
+            z2: -500-500
+            speed: 10-60
+            mid: 1-8
+        Returns:
+            bool: True for successful, False for unsuccessful
+        """
+        return self.send_control_command('curve %s %s %s %s %s %s %s m%s' % (x1, y1, z1, x2, y2, z2, speed, mid))
+
+    @accepts(x=int, y=int, z=int, speed=int, yaw=int, mid1=int, mid2=int)
+    def go_xyz_speed_yaw_mid(self, x, y, z, speed, yaw, mid1, mid2):
+        """Tello fly to x y z in speed (cm/s) relative to mid1
+        Then fly to 0 0 z over mid2 and rotate to yaw relative to mid2's rotation
+        Arguments:
+            x: -500-500
+            y: -500-500
+            z: -500-500
+            speed: 10-100
+            yaw: -360-360
+            mid1: 1-8
+            mid2: 1-8
+        Returns:
+            bool: True for successful, False for unsuccessful
+        """
+        return self.send_control_command('jump %s %s %s %s %s m%s m%s' % (x, y, z, speed, yaw, mid1, mid2))
+
+    def enable_mission_pads(self):
+        return self.send_control_command("mon")
+
+    def disable_mission_pads(self):
+        return self.send_control_command("moff")
+
+    def set_mission_pad_detection_direction(self, x):
+        return self.send_control_command("mdirection " + str(x))
 
     @accepts(x=int)
     def set_speed(self, x):
