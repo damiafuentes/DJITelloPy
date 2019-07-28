@@ -7,8 +7,11 @@ class TelloSwarm:
 		with open(path, "r") as fd:
 			ips = fd.readlines()
 
+		return TelloSwarm.fromIps(ips, enable_exceptions)
+
+	def fromIps(ips, enable_exceptions=True):
 		if len(ips) == 0:
-			raise "Empty file"
+			raise Exception("No ips provided")
 
 		firstTello = Tello(ips[0])
 		tellos = [firstTello]
