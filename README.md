@@ -20,29 +20,47 @@ $ pip install requirements.txt
 
 ### Simple example
 
-```
+```python
 from djitellopy import Tello
 import cv2
 import time
 
-
 tello = Tello()
 
 tello.connect()
-
 tello.takeoff()
-time.sleep(5)
 
 tello.move_left(100)
-time.sleep(5)
-
 tello.rotate_counter_clockwise(45)
-time.sleep(5)
 
 tello.land()
-time.sleep(5)
-        
 tello.end()
+```
+
+### Swarm example
+```python
+from djitellopy import TelloSwarm
+
+swarm = TelloSwarm.fromIps([
+    "192.168.178.42",
+    "192.168.178.43",
+    "192.168.178.44"
+])
+
+swarm.connect()
+swarm.takeoff()
+
+# run in parallel on all tellos
+swarm.move_up(100)
+
+# run by one tello after the other
+swarm.sequential(lambda i, tello: tello.move_forward(i * 20))
+
+# making each tello do something unique in parallel
+swarm.parallel(lambda i, tello: tello.move_left(i * 100))
+
+swarm.land()
+swarm.end()
 ```
 
 ### Example using pygame and the video stream
@@ -55,8 +73,11 @@ The controls are:
 - A and D: Counter clockwise and clockwise rotations
 - W and S: Up and down.
 
-### Note
-If you are using the ```streamon``` command and the response is ```Unknown command``` means you have to update the Tello firmware. That can be done through the Tello app.
+### Notes
+- If you are using the ```streamon``` command and the response is ```Unknown command``` means you have to update the Tello firmware. That can be done through the Tello app.
+- Mission pad detection and navigation is only supported by the Tello EDU
+- Connecting to an existing wifi network is only supported by the Tello EDU
+- When connected to an existing wifi network video streaming is not available
 
 ## Author
 
