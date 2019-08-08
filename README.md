@@ -13,7 +13,7 @@ or
 ```
 $ git clone https://github.com/damiafuentes/TelloSDKPy.git
 $ cd DJITelloPy
-$ pip install requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ## Usage
