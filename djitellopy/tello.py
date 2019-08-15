@@ -36,6 +36,8 @@ class Tello:
     VS_UDP_IP = '0.0.0.0'
     VS_UDP_PORT = 11111
 
+    STATE_UDP_PORT = 8890
+
     # VideoCapture object
     cap = None
     background_frame_read = None
@@ -51,6 +53,7 @@ class Tello:
 
         self.address = (host, port)
         self.response = None
+        self.response_state = None  #to attain the response of the states
         self.stream_on = False
         self.enable_exceptions = enable_exceptions
         self.retry_count = retry_count
@@ -62,10 +65,19 @@ class Tello:
                                             socket.SOCK_DGRAM)  # UDP
             self.clientSocket.bind(('', self.UDP_PORT))  # For UDP response (receiving data)
 
+        self.stateSocket = socket.socket(socket.AF_INET,
+                                          socket.SOCK_DGRAM)
+        self.stateSocket.bind(('', self.STATE_UDP_PORT))# for accessing the states of Tello
+
         # Run tello udp receiver on background
-        thread = threading.Thread(target=self.run_udp_receiver, args=())
-        thread.daemon = True
-        thread.start()
+        thread1 = threading.Thread(target=self.run_udp_receiver, args=())
+        # Run state reciever on background
+        thread2 = threading.Thread(target=self.get_states, args=())
+
+        thread1.daemon = True
+        thread2.daemon = True
+        thread1.start()
+        thread2.start()
 
     def run_udp_receiver(self):
         """Setup drone UDP receiver. This method listens for responses of Tello. Must be run from a background thread
@@ -76,6 +88,121 @@ class Tello:
             except Exception as e:
                 self.LOGGER.error(e)
                 break
+
+    def get_states(self):
+        """This runs on background to recieve the state of Tello"""
+        while True:
+            try:
+                self.response_state, _ = self.stateSocket.recvfrom(128)
+            except Exception as e:
+                self.LOGGER.error(e)
+                break
+
+    def get_current_state_all(self):
+        """Call this function to attain the states of Tello"""
+        if self.response_state == 'ok':
+            return False
+        else:
+            return self.response_state.decode('ASCII')
+
+    def get_pitch(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[1])
+
+    def get_roll(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[3])
+
+    def get_yaw(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[5])
+
+    def get_vgx(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[7])
+
+    def get_vgy(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[9])
+
+    def get_vgz(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[11])
+
+    def get_agx(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[27])
+
+    def get_agy(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[29])
+
+    def get_agz(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[31])
+
+    def get_h(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[19])
+
+    def get_bat(self):
+        if self.response_state == 'ok':
+            return False
+        else:
+            response = self.get_current_state_all()
+            response = response.replace(';',':')
+            response = response.split(':')
+            return float(response[21])
 
     def get_udp_video_address(self):
         return 'udp://@' + self.VS_UDP_IP + ':' + str(self.VS_UDP_PORT)  # + '?overrun_nonfatal=1&fifo_size=5000'
