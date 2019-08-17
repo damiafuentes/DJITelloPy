@@ -112,7 +112,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[1])
+            try:
+                return float(response[1])
+            except:
+                print("Exception in pitch occured")
+                return 0
 
     def get_roll(self):
         if self.response_state == 'ok':
@@ -121,7 +125,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[3])
+            try:
+                return float(response[3])
+            except:
+                print("Exception in roll occured")
+                return 0
 
     def get_yaw(self):
         if self.response_state == 'ok':
@@ -130,7 +138,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[5])
+            try:
+                return float(response[5])
+            except:
+                print("Exception in yaw occured")
+                return 0
 
     def get_vgx(self):
         if self.response_state == 'ok':
@@ -139,7 +151,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[7])
+            try:
+                return float(response[7])
+            except:
+                print("Exception in velocity in x occured")
+                return 0
 
     def get_vgy(self):
         if self.response_state == 'ok':
@@ -148,7 +164,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[9])
+            try:
+                return float(response[9])
+            except:
+                print("Exception in velocity in y occured")
+                return 0
 
     def get_vgz(self):
         if self.response_state == 'ok':
@@ -157,7 +177,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[11])
+            try:
+                return float(response[11])
+            except:
+                print("Exception in velocity in z occured")
+                return 0
 
     def get_agx(self):
         if self.response_state == 'ok':
@@ -166,7 +190,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[27])
+            try:
+                return float(response[27])
+            except:
+                print("Exception in acceleration in x")
+                return 0
 
     def get_agy(self):
         if self.response_state == 'ok':
@@ -175,7 +203,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[29])
+            try:
+                return float(response[29])
+            except:
+                print("Exception in acceleration in y")
+                return 0
 
     def get_agz(self):
         if self.response_state == 'ok':
@@ -184,7 +216,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[31])
+            try:
+                return float(response[31])
+            except:
+                print("Exception in acceleration in z")
+                return 0
 
     def get_h(self):
         if self.response_state == 'ok':
@@ -193,7 +229,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[19])
+            try:
+                return float(response[19])
+            except:
+                print("Exception in height")
+                return 0
 
     def get_bat(self):
         if self.response_state == 'ok':
@@ -202,7 +242,11 @@ class Tello:
             response = self.get_current_state_all()
             response = response.replace(';',':')
             response = response.split(':')
-            return float(response[21])
+            try:
+                return float(response[21])
+            except:
+                print("Exception in battery")
+                return 0
 
     def get_udp_video_address(self):
         return 'udp://@' + self.VS_UDP_IP + ':' + str(self.VS_UDP_PORT)  # + '?overrun_nonfatal=1&fifo_size=5000'
