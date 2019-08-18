@@ -246,7 +246,7 @@ class Tello:
                 return float(response[21])
             except:
                 print("Exception in battery")
-                return 0
+                return 50
 
     def get_udp_video_address(self):
         return 'udp://@' + self.VS_UDP_IP + ':' + str(self.VS_UDP_PORT)  # + '?overrun_nonfatal=1&fifo_size=5000'
