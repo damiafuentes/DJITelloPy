@@ -844,6 +844,14 @@ class Tello:
         """
         return self.send_read_command('sn?')
 
+    def go_to_height(self,h):
+        h = h+20
+        while(self.tello.get_h()<(h-100)):
+            self.tello.send_rc_control(0,0,int(0.2*(h-tello.get_h())),0)
+        while(self.tello.get_h()<(h-20)):
+            self.tello.send_rc_control(0,0,int(0.25*(h-tello.get_h())),0)
+
+
     def end(self):
         """Call this method when you want to end the tello object"""
         if self.stream_on:
