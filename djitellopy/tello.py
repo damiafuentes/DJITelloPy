@@ -402,7 +402,10 @@ class Tello:
             if response.isdigit():
                 return int(response)
             else:
-                return response
+                try:
+                    return float(response) # isdigit() is False when the number is a float(barometer)
+                except ValueError:
+                    return response
         else:
             return self.return_error_on_send_command(command, response, self.enable_exceptions)
 
@@ -796,7 +799,9 @@ class Tello:
             False: Unsuccessful
             int: pitch roll yaw
         """
-        return self.send_read_command('attitude?')
+        r = self.send_read_command('attitude?').replace(';', ':').split(':')
+        return dict(zip(r[::2], [int(i) for i in r[1::2]])) # {'pitch': xxx, 'roll': xxx, 'yaw': xxx}
+
 
     def get_barometer(self):
         """Get barometer value (m)
@@ -846,6 +851,9 @@ class Tello:
             self.background_frame_read.stop()
         if self.cap is not None:
             self.cap.release()
+
+    def __del__(self):
+        self.end()
 
 
 class BackgroundFrameRead:
