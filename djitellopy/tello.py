@@ -409,14 +409,14 @@ class Tello:
         else:
             return self.return_error_on_send_command(command, response, self.enable_exceptions)
 
-    @staticmethod
-    def return_error_on_send_command(command, response, enable_exceptions):
+    @classmethod
+    def return_error_on_send_command(cl, command, response, enable_exceptions):
         """Returns False and print an informative result code to show unsuccessful response"""
         msg = 'Command ' + command + ' was unsuccessful. Message: ' + str(response)
         if enable_exceptions:
             raise Exception(msg)
         else:
-            self.LOGGER.error(msg)
+            cl.LOGGER.error(msg)
             return False
 
 
@@ -547,17 +547,6 @@ class Tello:
             bool: True for successful, False for unsuccessful
         """
         return self.move("back", x)
-
-    @accepts(x=int)
-    def move_up(self, x):
-        """Tello fly up with distance x cm.
-        Arguments:
-            x: 20-500
-
-        Returns:
-            bool: True for successful, False for unsuccessful
-        """
-        return self.move("up", x)
 
     @accepts(x=int)
     def rotate_clockwise(self, x):
