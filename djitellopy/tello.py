@@ -7,11 +7,11 @@ import cv2
 from threading import Thread
 from djitellopy.decorators import accepts
 
-
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
     Tello API documentation:
     https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf
+    https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf
     """
     # Send and receive commands, client socket
     UDP_IP = '192.168.10.1'
@@ -91,162 +91,118 @@ class Tello:
 
     def get_states(self):
         """This runs on background to recieve the state of Tello"""
+        field_converters = {
+            # Tello EDU with mission pads enabled only
+            'mid': int,
+            'x': int,
+            'y': int,
+            'z': int,
+            # 'mpry': (custom format 'x,y,z')
+
+            # common entries
+            'pitch': int,
+            'roll': int,
+            'yaw': int,
+            'vgx': int,
+            'vgy': int,
+            'vgz': int,
+            'templ': int,
+            'temph': int,
+            'tof': int,
+            'h': int,
+            'bat': int,
+            'baro': float,
+            'time': int,
+            'agx': float,
+            'agy': float,
+            'agz': float,
+        }
+
         while True:
             try:
-                self.response_state, _ = self.stateSocket.recvfrom(128)
+                state, _ = self.stateSocket.recvfrom(128)
+                state = state.decode('ASCII')
+                if state == 'ok':
+                    continue
+
+
+                new_state = {}
+                for field in state.split(';'):
+                    split = field.split(':')
+
+                    key = split[0]
+                    value = split[1]
+                    if key in field_converters:
+                        try:
+                            value = field_converters[key](value)
+                        except Exception as e:
+                            self.LOGGER.error(e)
+
+                    new_state[key] = value
+
+                self.response_state = new_state
+
             except Exception as e:
                 self.LOGGER.error(e)
                 break
 
-    def get_current_state_all(self):
-        """Call this function to attain the states of Tello"""
-        if self.response_state == 'ok':
-            return False
+    def get_current_state(self):
+        """Call this function to attain the state of the Tello. Returns a dict
+        with all fields"""
+        return self.response_state
+
+    def get_state_field(self, key):
+        if key in self.response_state:
+            return self.response_state[key]
+        elif self.enable_exceptions:
+            raise Exception('Could not get state property ' + key)
         else:
-            return self.response_state.decode('ASCII')
+            return False
+
+    def get_mid(self):
+        return self.get_state_field('mid')
+
+    def get_mid_x(self):
+        return self.get_state_field('x')
+
+    def get_mid_y(self):
+        return self.get_state_field('y')
+
+    def get_mid_z(self):
+        return self.get_state_field('z')
 
     def get_pitch(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[1])
-            except:
-                print("Exception in pitch occured")
-                return 0
+        return self.get_state_field('pitch')
 
     def get_roll(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[3])
-            except:
-                print("Exception in roll occured")
-                return 0
+        return self.get_state_field('roll')
 
     def get_yaw(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[5])
-            except:
-                print("Exception in yaw occured")
-                return 0
+        return self.get_state_field('yaw')
 
     def get_vgx(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[7])
-            except:
-                print("Exception in velocity in x occured")
-                return 0
+        return self.get_state_field('vgx')
 
     def get_vgy(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[9])
-            except:
-                print("Exception in velocity in y occured")
-                return 0
+        return self.get_state_field('vgy')
 
     def get_vgz(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[11])
-            except:
-                print("Exception in velocity in z occured")
-                return 0
+        return self.get_state_field('vgz')
 
     def get_agx(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[27])
-            except:
-                print("Exception in acceleration in x")
-                return 0
+        return self.get_state_field('agx')
 
     def get_agy(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[29])
-            except:
-                print("Exception in acceleration in y")
-                return 0
+        return self.get_state_field('agy')
 
     def get_agz(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[31])
-            except:
-                print("Exception in acceleration in z")
-                return 0
+        return self.get_state_field('agz')
 
     def get_h(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[19])
-            except:
-                print("Exception in height")
-                return 0
+        return self.get_state_field('h')
 
     def get_bat(self):
-        if self.response_state == 'ok':
-            return False
-        else:
-            response = self.get_current_state_all()
-            response = response.replace(';',':')
-            response = response.split(':')
-            try:
-                return float(response[21])
-            except:
-                print("Exception in battery")
-                return 50
+        return self.get_state_field('bat')
 
     def get_udp_video_address(self):
         return 'udp://@' + self.VS_UDP_IP + ':' + str(self.VS_UDP_PORT)  # + '?overrun_nonfatal=1&fifo_size=5000'
