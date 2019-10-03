@@ -13,13 +13,10 @@ class TelloSwarm:
 		if len(ips) == 0:
 			raise Exception("No ips provided")
 
-		firstTello = Tello(ips[0])
-		tellos = [firstTello]
-
-		for ip in ips[1:]:
+		tellos = []
+		for ip in ips:
 			tellos.append(Tello(
-				ip,
-				client_socket=firstTello.clientSocket,
+				host=ip.strip(),
 				enable_exceptions=enable_exceptions
 			))
 
