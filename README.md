@@ -4,25 +4,27 @@ Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/e
 
 Tested with Python 3.6, but it also may be compatabile with other versions.
 
-## Install
-```
-$ pip install djitellopy
-```
-or
+## Install through git clone
 ```
 $ pip install --upgrade pip
 $ git clone https://github.com/damiafuentes/TelloSDKPy.git
 $ cd TelloSDKPy
 $ pip install -r requirements.txt
 ```
-Sometime you need to update the virtual environment indexes and skeletons. If you are working with PyCharm, this can be done ```File > Invalidate Caches```
+Sometimes you need to update the virtual environment indexes and skeletons in order for the `example.py` file to work with `pygame. If you are working with PyCharm, this can be done to ```File > Invalidate Caches```
+
+## Install through pip
+NOTICE: The python package at PyPi library is hardly every maintained. I would recommend to install it through ``git clone``.
+```
+$ pip install djitellopy
+```
 
 ## Usage
 
 ### Simple example
 
 ```python
-from djitellopy import Tello
+from TelloSDKPy.djitellopy import Tello
 import cv2
 import time
 
@@ -51,7 +53,7 @@ The controls are:
 ### Swarm example
 Only for Tello EDU's.
 ```python
-from djitellopy import TelloSwarm
+from TelloSDKPy.djitellopy import TelloSwarm
 
 swarm = TelloSwarm.fromIps([
     "192.168.178.42",
