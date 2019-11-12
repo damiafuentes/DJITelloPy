@@ -10,10 +10,12 @@ $ pip install djitellopy
 ```
 or
 ```
+$ pip install --upgrade pip
 $ git clone https://github.com/damiafuentes/TelloSDKPy.git
 $ cd TelloSDKPy
 $ pip install -r requirements.txt
 ```
+Sometime you need to update the virtual environment indexes and skeletons. If you are working with PyCharm, this can be done ```File > Invalidate Caches```
 
 ## Usage
 
