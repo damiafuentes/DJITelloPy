@@ -1,4 +1,4 @@
-from djitellopy import Tello
+from TelloSDKPy.djitellopy.tello import Tello
 import cv2
 import pygame
 from pygame.locals import *
@@ -96,7 +96,7 @@ class FrontEnd(object):
 
             time.sleep(1 / FPS)
 
-        # Call it always before finishing. I deallocate resources.
+        # Call it always before finishing. To deallocate resources.
         self.tello.end()
 
     def keydown(self, key):
@@ -116,9 +116,9 @@ class FrontEnd(object):
             self.up_down_velocity = S
         elif key == pygame.K_s:  # set down velocity
             self.up_down_velocity = -S
-        elif key == pygame.K_a:  # set yaw clockwise velocity
+        elif key == pygame.K_a:  # set yaw counter clockwise velocity
             self.yaw_velocity = -S
-        elif key == pygame.K_d:  # set yaw counter clockwise velocity
+        elif key == pygame.K_d:  # set yaw clockwise velocity
             self.yaw_velocity = S
 
     def keyup(self, key):

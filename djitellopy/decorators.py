@@ -1,5 +1,5 @@
 import sys
-
+import functools
 
 # Decorator to check method param type, raise needed exception type
 # http://code.activestate.com/recipes/578809-decorator-to-check-method-param-types/
@@ -20,6 +20,7 @@ def accepts(**types):
             argcount
         assert len(types) == argcount, s
 
+        @functools.wraps(f)
         def new_f(*args, **kwds):
             for i, v in enumerate(args):
                 if fun_code.co_varnames[i] in types and \
@@ -40,3 +41,17 @@ def accepts(**types):
         return new_f
 
     return check_accepts
+
+
+def get_state_decorator(func):
+    @functools.wraps(func)
+    def wrapped(instance, *args, **kwargs):
+        if instance.response_state == 'ok':
+            return False
+        else:
+            try:
+                return func(instance, *args, **kwargs)
+            except:
+                instance.LOGGER.error(f"Exception in {func.__name__} occured")
+                return 0
+    return wrapped
