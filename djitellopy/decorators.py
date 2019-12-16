@@ -52,6 +52,6 @@ def get_state_decorator(func):
             try:
                 return func(instance, *args, **kwargs)
             except:
-                instance.LOGGER.error(f"Exception in {func.__name__} occured")
+                instance.LOGGER.error("Exception in {} occured".format(func.__name__))
                 return 0
     return wrapped
