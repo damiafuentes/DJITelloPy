@@ -112,6 +112,7 @@ class Tello:
         host = self.address[0]
         return drones[host]
 
+    @staticmethod
     def udp_response_receiver():
         """Setup drone UDP receiver. This method listens for responses of Tello.
         Must be run from a background thread in order to not block the main thread."""
@@ -130,9 +131,10 @@ class Tello:
 
                 drones[address]['responses'].append(data)
             except Exception as e:
-                self.LOGGER.error(e)
+                Tello.LOGGER.error(e)
                 break
 
+    @staticmethod
     def udp_state_receiver():
         """Setup state UDP receiver. This method listens for state infor from
         the Tello. Must be run from a background thread in order to not block
@@ -150,9 +152,10 @@ class Tello:
 
                 drones[address]['state'] = Tello.parse_state(data)
             except Exception as e:
-                self.LOGGER.error(e)
+                Tello.LOGGER.error(e)
                 break
 
+    @staticmethod
     def parse_state(state):
         """Parse a state line to a dict"""
         state = state.decode('ASCII').strip()
@@ -173,7 +176,7 @@ class Tello:
                 try:
                     value = Tello.state_field_converters[key](value)
                 except Exception as e:
-                    self.LOGGER.error(e)
+                    Tello.LOGGER.error(e)
 
             state_obj[key] = value
 
