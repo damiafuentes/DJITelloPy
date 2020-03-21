@@ -219,49 +219,114 @@ class Tello:
         else:
             return False
 
-    def get_mid(self):
+    def get_mission_pad_id(self):
+        """Mission pad ID of the currently detected mission pad
+        Only available on Tello EDUs after calling enable_mission_pads
+        Returns:
+            int: -1 if none is detected, else 1-8
+        """
         return self.get_state_field('mid')
 
-    def get_mid_x(self):
+    def get_mission_pad_distance_x(self):
+        """X distance to current mission pad
+        Only available on Tello EDUs after calling enable_mission_pads
+        Returns:
+            int: distance in cm
+        """
         return self.get_state_field('x')
 
-    def get_mid_y(self):
+    def get_mission_pad_distance_y(self):
+        """Y distance to current mission pad
+        Only available on Tello EDUs after calling enable_mission_pads
+        Returns:
+            int: distance in cm
+        """
         return self.get_state_field('y')
 
-    def get_mid_z(self):
+    def get_mission_pad_distance_z(self):
+        """Z distance to current mission pad
+        Only available on Tello EDUs after calling enable_mission_pads
+        Returns:
+            int: distance in cm
+        """
         return self.get_state_field('z')
 
     def get_pitch(self):
+        """Get pitch in degree
+        Returns:
+            int: pitch in degree
+        """
         return self.get_state_field('pitch')
 
     def get_roll(self):
+        """Get roll in degree
+        Returns:
+            int: roll in degree
+        """
         return self.get_state_field('roll')
 
     def get_yaw(self):
+        """Get yaw in degree
+        Returns:
+            int: yaw in degree
+        """
         return self.get_state_field('yaw')
 
-    def get_vgx(self):
+    def get_speed_x(self):
+        """X-Axis Speed
+        Returns:
+            int: speed
+        """
         return self.get_state_field('vgx')
 
-    def get_vgy(self):
+    def get_speed_y(self):
+        """Y-Axis Speed
+        Returns:
+            int: speed
+        """
         return self.get_state_field('vgy')
 
-    def get_vgz(self):
+    def get_speed_z(self):
+        """Z-Axis Speed
+        Returns:
+            int: speed
+        """
         return self.get_state_field('vgz')
 
-    def get_agx(self):
+    def get_acceleration_x(self):
+        """X-Axis Acceleration
+        Returns:
+            float: acceleration
+        """
         return self.get_state_field('agx')
 
-    def get_agy(self):
+    def get_acceleration_y(self):
+        """Y-Axis Acceleration
+        Returns:
+            float: acceleration
+        """
         return self.get_state_field('agy')
 
-    def get_agz(self):
+    def get_acceleration_z(self):
+        """Z-Axis Acceleration
+        Returns:
+            float: acceleration
+        """
         return self.get_state_field('agz')
 
-    def get_h(self):
+    def get_height(self):
+        """Get current height in cm
+        Returns:
+            int: height in cm
+        """
         return self.get_state_field('h')
 
-    def get_bat(self):
+    def get_battery(self):
+        """Get current battery percentage
+        Returns:
+            False: Unsuccessful
+            int: 0-100
+        """
         return self.get_state_field('bat')
 
     def get_udp_video_address(self):
@@ -783,18 +848,19 @@ class Tello:
         return self.send_control_command('ap %s %s' % (ssid, password))
 
     def get_speed(self):
-        """Get current speed (cm/s)
+        """Query speed setting (cm/s)
         Returns:
             False: Unsuccessful
             int: 1-100
         """
         return self.send_read_command('speed?')
 
-    def get_battery(self):
-        """Get current battery percentage
+    def query_battery(self):
+        """Get current battery percentage via a query command
+        Using get_battery is usually faster
         Returns:
             False: Unsuccessful
-            int: -100
+            int: 0-100
         """
         return self.send_read_command('battery?')
 
@@ -806,8 +872,9 @@ class Tello:
         """
         return self.send_read_command('time?')
 
-    def get_height(self):
-        """Get height (cm)
+    def query_height(self):
+        """Get height in cm via a query command
+        Using get_height is usually faster
         Returns:
             False: Unsuccessful
             int: 0-3000
