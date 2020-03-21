@@ -17,8 +17,6 @@ class Tello:
     https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf
     """
     # Send and receive commands, client socket
-    UDP_IP = '192.168.10.1'
-    UDP_PORT = 8889
     RESPONSE_TIMEOUT = 7  # in seconds
     TIME_BTW_COMMANDS = 1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
@@ -40,6 +38,7 @@ class Tello:
     VS_UDP_IP = '0.0.0.0'
     VS_UDP_PORT = 11111
 
+    CONTROL_UDP_PORT = 8889
     STATE_UDP_PORT = 8890
 
     # conversion functions for state protocol fields
@@ -78,36 +77,14 @@ class Tello:
 
     is_flying = False
 
-    # Tello state
-    pitch = -1
-    roll = -1
-    yaw = -1
-    speed_x = -1
-    speed_y = -1
-    speed_z = -1
-    temperature_lowest = -1
-    temperature_highest = -1
-    distance_tof = -1
-    height = -1
-    battery = -1
-    barometer = -1.0
-    flight_time = -1.0
-    acceleration_x = -1.0
-    acceleration_y = -1.0
-    acceleration_z = -1.0
-    attitude = {'pitch': -1, 'roll': -1, 'yaw': -1}
-
     def __init__(self,
         host='192.168.10.1',
-        port=8889,
-        enable_exceptions=True,
         retry_count=3):
 
         global drones
 
-        self.address = (host, port)
+        self.address = (host, Tello.CONTROL_UDP_PORT)
         self.stream_on = False
-        self.enable_exceptions = enable_exceptions
         self.retry_count = retry_count
 
         if drones is None:
@@ -141,7 +118,7 @@ class Tello:
         global client_socket
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        client_socket.bind(('', Tello.UDP_PORT))
+        client_socket.bind(('', Tello.CONTROL_UDP_PORT))
 
         while True:
             try:
@@ -214,10 +191,8 @@ class Tello:
 
         if key in state:
             return state[key]
-        elif self.enable_exceptions:
-            raise Exception('Could not get state property ' + key)
         else:
-            return False
+            raise Exception('Could not get state property ' + key)
 
     def get_mission_pad_id(self) -> int:
         """Mission pad ID of the currently detected mission pad
@@ -455,7 +430,7 @@ class Tello:
             if response == 'OK' or response == 'ok':
                 return True
 
-        return self.return_error_on_send_command(command, response, self.enable_exceptions)
+        return self.raise_result_error(command, response)
 
     def send_read_command(self, command: str, printinfo: bool = True) -> str:
         """Send set command to Tello and wait for its response. Possible set commands:
@@ -490,16 +465,10 @@ class Tello:
                 except ValueError:
                     return response
         else:
-            return self.return_error_on_send_command(command, response, self.enable_exceptions)
+            return self.raise_result_error(command, response)
 
-    def return_error_on_send_command(self, command, response, enable_exceptions) -> bool:
-        """Returns False and print an informative result code to show unsuccessful response"""
-        msg = 'Command ' + command + ' was unsuccessful. Message: ' + str(response)
-        if enable_exceptions:
-            raise Exception(msg)
-        else:
-            self.LOGGER.error(msg)
-            return False
+    def raise_result_error(self, command: str, response: any) -> bool:
+        raise Exception('Command ' + command + ' was unsuccessful. Message: ' + str(response))
 
     def connect(self):
         """Entry SDK mode
