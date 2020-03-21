@@ -138,7 +138,7 @@ class Tello:
                     self.attitude = {'pitch': int(list[1]), 'roll': int(list[3]), 'yaw': int(list[5])}
             except Exception as e:
                 self.LOGGER.error(e)
-                self.LOGGER.error(f"Response was is {self.response_state}")
+                self.LOGGER.error("Response was is {}".format(self.response_state))
                 break
 
     def get_udp_video_address(self):
@@ -200,7 +200,7 @@ class Tello:
             return None
 
         if printinfo:
-            self.LOGGER.info(f'Response {command}: {response}')
+            self.LOGGER.info('Response {}: {}'.format(command, response))
 
         self.response = None
 
