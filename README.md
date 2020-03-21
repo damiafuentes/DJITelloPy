@@ -4,6 +4,8 @@ Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/e
 
 Tested with Python 3.6, but it also may be compatabile with other versions.
 
+Feel free to contribute!
+
 ## Install through git clone
 ```
 $ pip install --upgrade pip
@@ -13,8 +15,8 @@ $ pip install -r requirements.txt
 ```
 Sometimes you need to update the virtual environment indexes and skeletons in order for the `example.py` file to work with `pygame. If you are working with PyCharm, this can be done to ```File > Invalidate Caches```
 
-## Install through pip
-NOTICE: The python package at PyPi library is hardly every maintained. I would recommend to install it through ``git clone``.
+## ~~Install through pip~~
+**DEPRECATED**: The python package at PyPi library is not maintained anymore. I would recommend to install it through ``git clone``.
 ```
 $ pip install djitellopy
 ```
