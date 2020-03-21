@@ -1,7 +1,6 @@
 from djitellopy import Tello
 import cv2
 import pygame
-from pygame.locals import *
 import numpy as np
 import time
 
@@ -43,7 +42,7 @@ class FrontEnd(object):
         self.send_rc_control = False
 
         # create update timer
-        pygame.time.set_timer(USEREVENT + 1, 50)
+        pygame.time.set_timer(pygame.USEREVENT + 1, 50)
 
     def run(self):
 
@@ -70,16 +69,16 @@ class FrontEnd(object):
         while not should_stop:
 
             for event in pygame.event.get():
-                if event.type == USEREVENT + 1:
+                if event.type == pygame.USEREVENT + 1:
                     self.update()
-                elif event.type == QUIT:
+                elif event.type == pygame.QUIT:
                     should_stop = True
-                elif event.type == KEYDOWN:
-                    if event.key == K_ESCAPE:
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
                         should_stop = True
                     else:
                         self.keydown(event.key)
-                elif event.type == KEYUP:
+                elif event.type == pygame.KEYUP:
                     self.keyup(event.key)
 
             if frame_read.stopped:
@@ -96,7 +95,7 @@ class FrontEnd(object):
 
             time.sleep(1 / FPS)
 
-        # Call it always before finishing. I deallocate resources.
+        # Call it always before finishing. To deallocate resources.
         self.tello.end()
 
     def keydown(self, key):
@@ -116,9 +115,9 @@ class FrontEnd(object):
             self.up_down_velocity = S
         elif key == pygame.K_s:  # set down velocity
             self.up_down_velocity = -S
-        elif key == pygame.K_a:  # set yaw clockwise velocity
+        elif key == pygame.K_a:  # set yaw counter clockwise velocity
             self.yaw_velocity = -S
-        elif key == pygame.K_d:  # set yaw counter clockwise velocity
+        elif key == pygame.K_d:  # set yaw clockwise velocity
             self.yaw_velocity = S
 
     def keyup(self, key):

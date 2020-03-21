@@ -1,14 +1,17 @@
-from djitellopy import Tello
+from .tello import Tello
 from threading import Thread, Barrier
 from queue import Queue
 
+
 class TelloSwarm:
+	@staticmethod
 	def fromFile(path, enable_exceptions=True):
 		with open(path, "r") as fd:
 			ips = fd.readlines()
 
 		return TelloSwarm.fromIps(ips, enable_exceptions)
 
+	@staticmethod
 	def fromIps(ips, enable_exceptions=True):
 		if len(ips) == 0:
 			raise Exception("No ips provided")

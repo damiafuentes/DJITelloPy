@@ -5,7 +5,7 @@ import time
 import threading
 import cv2
 from threading import Thread
-from djitellopy.decorators import accepts
+from .decorators import accepts
 
 drones = None
 client_socket = None
@@ -26,10 +26,11 @@ class Tello:
     last_received_command = time.time()
 
     HANDLER = logging.StreamHandler()
-    FORMATTER = logging.Formatter('%(message)s')
+    FORMATTER = logging.Formatter('%(filename)s - %(lineno)d - %(message)s')
     HANDLER.setFormatter(FORMATTER)
 
     LOGGER = logging.getLogger('djitellopy')
+
     LOGGER.addHandler(HANDLER)
     LOGGER.setLevel(logging.INFO)
     # use logging.getLogger('djitellopy').setLevel(logging.<LEVEL>) in YOUR CODE
@@ -74,6 +75,27 @@ class Tello:
     background_frame_read = None
 
     stream_on = False
+
+    is_flying = False
+
+    # Tello state
+    pitch = -1
+    roll = -1
+    yaw = -1
+    speed_x = -1
+    speed_y = -1
+    speed_z = -1
+    temperature_lowest = -1
+    temperature_highest = -1
+    distance_tof = -1
+    height = -1
+    battery = -1
+    barometer = -1.0
+    flight_time = -1.0
+    acceleration_x = -1.0
+    acceleration_y = -1.0
+    acceleration_z = -1.0
+    attitude = {'pitch': -1, 'roll': -1, 'yaw': -1}
 
     def __init__(self,
         host='192.168.10.1',
@@ -272,8 +294,8 @@ class Tello:
     def stop_video_capture(self):
         return self.streamoff()
 
-    @accepts(command=str)
-    def send_command_with_return(self, command):
+    @accepts(command=str, printinfo=bool, timeout=int)
+    def send_command_with_return(self, command, printinfo=True, timeout=RESPONSE_TIMEOUT):
         """Send command to Tello and wait for its response.
         Return:
             bool: True for successful, False for unsuccessful
@@ -283,7 +305,8 @@ class Tello:
         if diff < self.TIME_BTW_COMMANDS:
             time.sleep(diff)
 
-        self.LOGGER.info('Send command: ' + command)
+        if printinfo:
+            self.LOGGER.info('Send command: ' + command)
         timestamp = int(time.time() * 1000)
 
         client_socket.sendto(command.encode('utf-8'), self.address)
@@ -293,11 +316,14 @@ class Tello:
             if (time.time() * 1000) - timestamp > self.RESPONSE_TIMEOUT * 1000:
                 self.LOGGER.warning('Timeout exceed on command ' + command)
                 return False
+            else:
+                time.sleep(0.1)
 
         response = responses.pop(0)
         response = response.decode('utf-8').rstrip("\r\n")
 
-        self.LOGGER.info('Response: ' + response)
+        if printinfo:
+            self.LOGGER.info('Response {}: {}'.format(command, response))
 
         self.response = None
 
@@ -332,8 +358,8 @@ class Tello:
         self.LOGGER.info('Send command (no expect response): ' + command)
         client_socket.sendto(command.encode('utf-8'), self.address)
 
-    @accepts(command=str)
-    def send_control_command(self, command):
+    @accepts(command=str, timeout=int)
+    def send_control_command(self, command, timeout=RESPONSE_TIMEOUT):
         """Send control command to Tello and wait for its response. Possible control commands:
             - command: entry SDK mode
             - takeoff: Tello auto takeoff
@@ -360,17 +386,17 @@ class Tello:
         Return:
             bool: True for successful, False for unsuccessful
         """
-
+        response = None
         for i in range(0, self.retry_count):
-            response = self.send_command_with_return(command)
+            response = self.send_command_with_return(command, timeout=timeout)
 
             if response == 'OK' or response == 'ok':
                 return True
 
         return self.return_error_on_send_command(command, response, self.enable_exceptions)
 
-    @accepts(command=str)
-    def send_read_command(self, command):
+    @accepts(command=str, printinfo=bool)
+    def send_read_command(self, command, printinfo=True):
         """Send set command to Tello and wait for its response. Possible set commands:
             - speed?: get current speed (cm/s): x: 1-100
             - battery?: get current battery percentage: x: 0-100
@@ -383,10 +409,10 @@ class Tello:
             - wifi?: get Wi-Fi SNR: snr
 
         Return:
-            bool: True for successful, False for unsuccessful
+            bool: The requested value for successful, False for unsuccessful
         """
 
-        response = self.send_command_with_return(command)
+        response = self.send_command_with_return(command, printinfo=printinfo)
 
         try:
             response = str(response)
@@ -399,22 +425,20 @@ class Tello:
                 return int(response)
             else:
                 try:
-                    return float(response) # isdigit() is False when the number is a float(barometer)
+                    return float(response)  # isdigit() is False when the number is a float(barometer)
                 except ValueError:
                     return response
         else:
             return self.return_error_on_send_command(command, response, self.enable_exceptions)
 
-    @classmethod
-    def return_error_on_send_command(cl, command, response, enable_exceptions):
+    def return_error_on_send_command(self, command, response, enable_exceptions):
         """Returns False and print an informative result code to show unsuccessful response"""
         msg = 'Command ' + command + ' was unsuccessful. Message: ' + str(response)
         if enable_exceptions:
             raise Exception(msg)
         else:
-            cl.LOGGER.error(msg)
+            self.LOGGER.error(msg)
             return False
-
 
     def connect(self):
         """Entry SDK mode
@@ -429,14 +453,23 @@ class Tello:
             bool: True for successful, False for unsuccessful
             False: Unsuccessful
         """
-        return self.send_control_command("takeoff")
+        # Something it takes a looooot of time to take off and return a succesful take off. So we better wait. If not, is going to give us error on the following calls.
+        if self.send_control_command("takeoff", timeout=20):
+            self.is_flying = True
+            return True
+        else:
+            return False
 
     def land(self):
         """Tello auto land
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        return self.send_control_command("land")
+        if self.send_control_command("land"):
+            self.is_flying = False
+            return True
+        else:
+            return False
 
     def streamon(self):
         """Set video stream on. If the response is 'Unknown command' means you have to update the Tello firmware. That
@@ -721,8 +754,19 @@ class Tello:
             pass
         else:
             self.last_rc_control_sent = int(time.time() * 1000)
-            return self.send_command_without_return('rc %s %s %s %s' % (left_right_velocity, forward_backward_velocity,
-                                                                        up_down_velocity, yaw_velocity))
+            return self.send_command_without_return('rc %s %s %s %s' % (self.round_to_100(left_right_velocity),
+                                                                        self.round_to_100(forward_backward_velocity),
+                                                                        self.round_to_100(up_down_velocity),
+                                                                        self.round_to_100(yaw_velocity)))
+
+    @accepts(x=int)
+    def round_to_100(self, x):
+        if x > 100:
+            return 100
+        elif x < -100:
+            return -100
+        else:
+            return x
 
     def set_wifi_credentials(self, ssid, password):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
@@ -785,8 +829,7 @@ class Tello:
             int: pitch roll yaw
         """
         r = self.send_read_command('attitude?').replace(';', ':').split(':')
-        return dict(zip(r[::2], [int(i) for i in r[1::2]])) # {'pitch': xxx, 'roll': xxx, 'yaw': xxx}
-
+        return dict(zip(r[::2], [int(i) for i in r[1::2]]))  # {'pitch': xxx, 'roll': xxx, 'yaw': xxx}
 
     def get_barometer(self):
         """Get barometer value (m)
@@ -830,6 +873,8 @@ class Tello:
 
     def end(self):
         """Call this method when you want to end the tello object"""
+        if self.is_flying:
+            self.land()
         if self.stream_on:
             self.streamoff()
         if self.background_frame_read is not None:
