@@ -13,7 +13,7 @@ $ git clone https://github.com/damiafuentes/TelloSDKPy.git
 $ cd TelloSDKPy
 $ pip install -r requirements.txt
 ```
-Sometimes you need to update the virtual environment indexes and skeletons in order for the `example.py` file to work with `pygame. If you are working with PyCharm, this can be done to ```File > Invalidate Caches```
+Sometimes you need to update the virtual environment indexes and skeletons in order for the `example.py` file to work with `pygame`. If you are working with PyCharm, this can be done to ```File > Invalidate Caches```
 
 ## ~~Install through pip~~
 **DEPRECATED**: The python package at PyPi library is not maintained anymore. I would recommend to install it through ``git clone``.
