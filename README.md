@@ -2,11 +2,21 @@
 DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf) and [Tello EDU SDK](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf). Yes, this library has been tested with the drone. 
 Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/example.py) for a working example controlling the drone as a remote controller with the keyboard and the video stream in a window.  
 
-Tested with Python 3.6, but it also may be compatabile with other versions.
+This library works with python >= 3.5.
 
 Feel free to contribute!
 
-## Install through git clone
+## Install using pip
+```
+$ pip install https://github.com/damiafuentes/DJITelloPy/archive/master.zip
+```
+
+For Linux distributions with both python2 and python3 (e.g. Debian, Ubuntu, ...) you need to run
+```
+$ pip3 install https://github.com/damiafuentes/DJITelloPy/archive/master.zip
+```
+
+## Install using git clone
 ```
 $ pip install --upgrade pip
 $ git clone https://github.com/damiafuentes/TelloSDKPy.git
@@ -14,12 +24,6 @@ $ cd TelloSDKPy
 $ pip install -r requirements.txt
 ```
 Sometimes you need to update the virtual environment indexes and skeletons in order for the `example.py` file to work with `pygame`. If you are working with PyCharm, this can be done to ```File > Invalidate Caches```
-
-## ~~Install through pip~~
-**DEPRECATED**: The python package at PyPi library is not maintained anymore. I would recommend to install it through ``git clone``.
-```
-$ pip install djitellopy
-```
 
 ## Usage
 
@@ -85,9 +89,11 @@ swarm.end()
 - Connecting to an existing wifi network is only supported by the Tello EDU.
 - When connected to an existing wifi network video streaming is not available.
 
-## Author
+## Authors
 
-* **Damià Fuentes Escoté** 
+* **Damià Fuentes Escoté**
+* **Jakob Löw**
+* [and more](https://github.com/damiafuentes/DJITelloPy/graphs/contributors)
 
 ## License
 
