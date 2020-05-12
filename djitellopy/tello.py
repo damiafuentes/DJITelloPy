@@ -5,7 +5,6 @@ import time
 import threading
 import cv2
 from threading import Thread
-from .decorators import accepts
 
 drones = None
 client_socket = None
@@ -321,7 +320,7 @@ class Tello:
 
         return self.cap
 
-    def get_frame_read(self) -> BackgroundFrameRead:
+    def get_frame_read(self) -> 'BackgroundFrameRead':
         """Get the BackgroundFrameRead object from the camera drone. Then, you just need to call
         backgroundFrameRead.frame to get the actual frame received by the drone.
         Returns:
