@@ -15,7 +15,6 @@ setup(
     install_requires=[  # I get to this in a second
         'numpy',
         'opencv-python',
-        'pygame',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

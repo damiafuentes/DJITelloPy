@@ -23,7 +23,6 @@ $ git clone https://github.com/damiafuentes/TelloSDKPy.git
 $ cd TelloSDKPy
 $ pip install -r requirements.txt
 ```
-Sometimes you need to update the virtual environment indexes and skeletons in order for the `example.py` file to work with `pygame`. If you are working with PyCharm, this can be done to ```File > Invalidate Caches```
 
 ## Usage
 
@@ -46,15 +45,16 @@ tello.land()
 tello.end()
 ```
 
-### Example using pygame and the video stream
+### Example using opencv and the video stream
 Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/example.py). 
 
 The controls are:
 - T: Takeoff
 - L: Land
-- Arrow keys: Forward, backward, left and right.
-- A and D: Counter clockwise and clockwise rotations
-- W and S: Up and down.
+- W, A, S, D: Forward, backward, left and right.
+- E, Q: Counter clockwise and clockwise rotations
+- R, F: Up and down.
+- Ctrl+C to land and exit
 
 ### Swarm example
 Only for Tello EDU's.
