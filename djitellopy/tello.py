@@ -9,6 +9,7 @@ from threading import Thread
 drones = None
 client_socket = None
 
+
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
     Tello API documentation:
@@ -19,19 +20,8 @@ class Tello:
     RESPONSE_TIMEOUT = 7  # in seconds
     TIME_BTW_COMMANDS = 1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
-    RETRY_COUNT = 3
-    last_received_command = time.time()
-
-    HANDLER = logging.StreamHandler()
-    FORMATTER = logging.Formatter('%(filename)s - %(lineno)d - %(message)s')
-    HANDLER.setFormatter(FORMATTER)
-
-    LOGGER = logging.getLogger('djitellopy')
-
-    LOGGER.addHandler(HANDLER)
-    LOGGER.setLevel(logging.INFO)
-    # use logging.getLogger('djitellopy').setLevel(logging.<LEVEL>) in YOUR CODE
-    # to only receive logs of the desired level and higher
+    RETRY_COUNT = 3  # number of retries after a failed command
+    TELLO_IP = '192.168.10.1'  # Tello IP address
 
     # Video stream, server socket
     VS_UDP_IP = '0.0.0.0'
@@ -39,6 +29,17 @@ class Tello:
 
     CONTROL_UDP_PORT = 8889
     STATE_UDP_PORT = 8890
+
+    # Set up logger
+    HANDLER = logging.StreamHandler()
+    FORMATTER = logging.Formatter('[%(levelname)s] %(filename)s - %(lineno)d - %(message)s')
+    HANDLER.setFormatter(FORMATTER)
+
+    LOGGER = logging.getLogger('djitellopy')
+    LOGGER.addHandler(HANDLER)
+    LOGGER.setLevel(logging.INFO)
+    # use Tello.LOGGER.setLevel(logging.<LEVEL>) in YOUR CODE
+    # to only receive logs of the desired level and higher
 
     # conversion functions for state protocol fields
     state_field_converters = {
@@ -73,31 +74,32 @@ class Tello:
     background_frame_read = None
 
     stream_on = False
-
     is_flying = False
 
     def __init__(self,
-        host='192.168.10.1',
-        retry_count=3):
+                 host=TELLO_IP,
+                 retry_count=RETRY_COUNT):
 
         global drones
 
         self.address = (host, Tello.CONTROL_UDP_PORT)
         self.stream_on = False
         self.retry_count = retry_count
+        self.last_received_command_timestamp = time.time()
+        self.last_rc_control_timestamp = time.time()
 
         if drones is None:
             drones = {}
 
-            # Run tello udp receiver on background
-            thread1 = threading.Thread(target=Tello.udp_response_receiver, args=())
-            # Run state reciever on background
-            thread2 = threading.Thread(target=Tello.udp_state_receiver, args=())
+            # Run Tello command responses UDP receiver on background
+            response_receiver_thread = threading.Thread(target=Tello.udp_response_receiver)
+            response_receiver_thread.daemon = True
+            response_receiver_thread.start()
 
-            thread1.daemon = True
-            thread2.daemon = True
-            thread1.start()
-            thread2.start()
+            # Run state UDP receiver on background
+            state_receiver_thread = threading.Thread(target=Tello.udp_state_receiver)
+            state_receiver_thread.daemon = True
+            state_receiver_thread.start()
 
         drones[host] = {
             'responses': [],
@@ -124,18 +126,21 @@ class Tello:
                 data, address = client_socket.recvfrom(1024)
 
                 address = address[0]
+                Tello.LOGGER.debug('Data received from {} at client_socket'.format(address))
+
                 if address not in drones:
                     continue
 
                 drones[address]['responses'].append(data)
+
             except Exception as e:
                 Tello.LOGGER.error(e)
                 break
 
     @staticmethod
     def udp_state_receiver():
-        """Setup state UDP receiver. This method listens for state infor from
-        the Tello. Must be run from a background thread in order to not block
+        """Setup state UDP receiver. This method listens for state information from
+        Tello. Must be run from a background thread in order to not block
         the main thread."""
         state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         state_socket.bind(('', Tello.STATE_UDP_PORT))
@@ -145,23 +150,27 @@ class Tello:
                 data, address = state_socket.recvfrom(1024)
 
                 address = address[0]
+                Tello.LOGGER.debug('Data received from {} at state_socket'.format(address))
+
                 if address not in drones:
                     continue
 
                 drones[address]['state'] = Tello.parse_state(data)
+
             except Exception as e:
                 Tello.LOGGER.error(e)
                 break
 
     @staticmethod
     def parse_state(state: str) -> dict:
-        """Parse a state line to a dict"""
+        """Parse a state line to a dictionary"""
         state = state.decode('ASCII').strip()
+        Tello.LOGGER.debug('Raw state data: {}'.format(state))
+
         if state == 'ok':
             return {}
 
-
-        state_obj = {}
+        state_dict = {}
         for field in state.split(';'):
             split = field.split(':')
             if len(split) < 2:
@@ -174,11 +183,13 @@ class Tello:
                 try:
                     value = Tello.state_field_converters[key](value)
                 except Exception as e:
+                    Tello.LOGGER.debug('Error parsing state value for {}: {} to {}'
+                                       .format(key, value, Tello.state_field_converters[key]))
                     Tello.LOGGER.error(e)
 
-            state_obj[key] = value
+            state_dict[key] = value
 
-        return state_obj
+        return state_dict
 
     def get_current_state(self) -> dict:
         """Call this function to attain the state of the Tello. Returns a dict
@@ -333,39 +344,35 @@ class Tello:
     def stop_video_capture(self):
         return self.streamoff()
 
-    def send_command_with_return(self, command: str, printinfo: bool = True, timeout: int = RESPONSE_TIMEOUT) -> str:
+    def send_command_with_return(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> str:
         """Send command to Tello and wait for its response.
         Return:
             bool: True for successful, False for unsuccessful
         """
         # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
-        diff = time.time() * 1000 - self.last_received_command
+        diff = time.time() - self.last_received_command_timestamp
         if diff < self.TIME_BTW_COMMANDS:
+            self.LOGGER.debug('Waiting {} seconds to execute command {}...'.format(diff, command))
             time.sleep(diff)
 
-        if printinfo:
-            self.LOGGER.info('Send command: ' + command)
-        timestamp = int(time.time() * 1000)
+        self.LOGGER.info('Send command: ' + command)
+        timestamp = time.time()
 
         client_socket.sendto(command.encode('utf-8'), self.address)
 
         responses = self.get_own_udp_object()['responses']
         while len(responses) == 0:
-            if (time.time() * 1000) - timestamp > self.RESPONSE_TIMEOUT * 1000:
+            if time.time() - timestamp > timeout:
                 self.LOGGER.warning('Timeout exceed on command ' + command)
                 return False
             else:
                 time.sleep(0.1)
 
+        self.last_received_command_timestamp = time.time()
         response = responses.pop(0)
         response = response.decode('utf-8').rstrip("\r\n")
 
-        if printinfo:
-            self.LOGGER.info('Response {}: {}'.format(command, response))
-
-        self.response = None
-
-        self.last_received_command = time.time() * 1000
+        self.LOGGER.info('Response {}: {}'.format(command, response))
 
         return response
 
@@ -429,9 +436,11 @@ class Tello:
             if response == 'OK' or response == 'ok':
                 return True
 
+            self.LOGGER.debug('Command attempt {} for {} failed'.format(i, command))
+
         return self.raise_result_error(command, response)
 
-    def send_read_command(self, command: str, printinfo: bool = True) -> str:
+    def send_read_command(self, command: str) -> str:
         """Send set command to Tello and wait for its response. Possible set commands:
             - speed?: get current speed (cm/s): x: 1-100
             - battery?: get current battery percentage: x: 0-100
@@ -447,7 +456,7 @@ class Tello:
             bool: The requested value for successful, False for unsuccessful
         """
 
-        response = self.send_command_with_return(command, printinfo=printinfo)
+        response = self.send_command_with_return(command)
 
         try:
             response = str(response)
@@ -467,7 +476,7 @@ class Tello:
             return self.raise_result_error(command, response)
 
     def raise_result_error(self, command: str, response: any) -> bool:
-        raise Exception('Command ' + command + ' was unsuccessful. Message: ' + str(response))
+        raise Exception('Command {} was unsuccessful. Message: {}'.format(command, response))
 
     def connect(self):
         """Entry SDK mode
@@ -482,7 +491,8 @@ class Tello:
             bool: True for successful, False for unsuccessful
             False: Unsuccessful
         """
-        # Something it takes a looooot of time to take off and return a succesful take off. So we better wait. If not, is going to give us error on the following calls.
+        # Something it takes a looooot of time to take off and return a succesful take off.
+        # So we better wait. If not, is going to give us error on the following calls.
         if self.send_control_command("takeoff", timeout=20):
             self.is_flying = True
             return True
@@ -501,8 +511,8 @@ class Tello:
             return False
 
     def streamon(self):
-        """Set video stream on. If the response is 'Unknown command' means you have to update the Tello firmware. That
-        can be done through the Tello app.
+        """Set video stream on. If the response is 'Unknown command' means you have to update the Tello firmware.
+        That can be done through the Tello app.
         Returns:
             bool: True for successful, False for unsuccessful
         """
@@ -750,9 +760,8 @@ class Tello:
         """
         return self.send_control_command("speed " + str(x))
 
-    last_rc_control_sent = 0
-
-    def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int, yaw_velocity: int):
+    def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int,
+                        yaw_velocity: int):
         """Send RC control via four channels. Command is sent every self.TIME_BTW_RC_CONTROL_COMMANDS seconds.
         Arguments:
             left_right_velocity: -100~100 (left/right)
@@ -762,10 +771,8 @@ class Tello:
         Returns:
             bool: True for successful, False for unsuccessful
         """
-        if int(time.time() * 1000) - self.last_rc_control_sent < self.TIME_BTW_RC_CONTROL_COMMANDS:
-            pass
-        else:
-            self.last_rc_control_sent = int(time.time() * 1000)
+        if time.time() - self.last_rc_control_timestamp > self.TIME_BTW_RC_CONTROL_COMMANDS:
+            self.last_rc_control_timestamp = time.time()
             return self.send_command_without_return('rc %s %s %s %s' % (self.round_to_100(left_right_velocity),
                                                                         self.round_to_100(forward_backward_velocity),
                                                                         self.round_to_100(up_down_velocity),
@@ -898,7 +905,8 @@ class Tello:
             self.cap.release()
 
         host = self.address[0]
-        del drones[host]
+        if host in drones:
+            del drones[host]
 
     def __del__(self):
         self.end()
