@@ -5,27 +5,24 @@ from queue import Queue
 
 class TelloSwarm:
 	@staticmethod
-	def fromFile(path, enable_exceptions=True):
+	def fromFile(path: str):
 		with open(path, "r") as fd:
 			ips = fd.readlines()
 
-		return TelloSwarm.fromIps(ips, enable_exceptions)
+		return TelloSwarm.fromIps(ips)
 
 	@staticmethod
-	def fromIps(ips, enable_exceptions=True):
+	def fromIps(ips: list):
 		if len(ips) == 0:
 			raise Exception("No ips provided")
 
 		tellos = []
 		for ip in ips:
-			tellos.append(Tello(
-				host=ip.strip(),
-				enable_exceptions=enable_exceptions
-			))
+			tellos.append(Tello(ip.strip()))
 
 		return TelloSwarm(tellos)
 
-	def __init__(self, tellos):
+	def __init__(self, tellos: list):
 		self.tellos = tellos
 		self.barrier = Barrier(len(tellos))
 		self.funcBarrier = Barrier(len(tellos) + 1)
