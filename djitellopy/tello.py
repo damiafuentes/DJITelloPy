@@ -159,6 +159,7 @@ class Tello:
                 if address not in drones:
                     continue
 
+                data = data.decode('ASCII')
                 drones[address]['state'] = Tello.parse_state(data)
 
             except Exception as e:
@@ -170,7 +171,7 @@ class Tello:
         """Parse a state line to a dictionary
         Internal method, you normally wouldn't call this yourself.
         """
-        state = state.decode('ASCII').strip()
+        state = state.strip()
         Tello.LOGGER.debug('Raw state data: {}'.format(state))
 
         if state == 'ok':
@@ -310,12 +311,58 @@ class Tello:
         """
         return self.get_state_field('agz')
 
+    def get_lowest_temperature(self) -> int:
+        """Get lowest temperature
+        Returns:
+            int: lowest temperature (°C)
+        """
+        return self.get_state_field('templ')
+
+    def get_highest_temperature(self) -> int:
+        """Get highest temperature
+        Returns:
+            float: highest temperature (°C)
+        """
+        return self.get_state_field('temph')
+
+    def get_temperature(self) -> float:
+        """Get average temperature
+        Returns:
+            float: average temperature (°C)
+        """
+        templ = self.get_lowest_temperature()
+        temph = self.get_highest_temperature()
+        return (templ + temph) / 2
+
     def get_height(self) -> int:
         """Get current height in cm
         Returns:
             int: height in cm
         """
         return self.get_state_field('h')
+
+    def get_distance_tof(self) -> int:
+        """Get current distance value from TOF in cm
+        Returns:
+            int: TOF distance in cm
+        """
+        return self.get_state_field('tof')
+
+    def get_barometer(self) -> int:
+        """Get current barometer measurement in cm
+        This resembles the absolute height.
+        See https://en.wikipedia.org/wiki/Altimeter
+        Returns:
+            int: barometer measurement in cm
+        """
+        return self.get_state_field('baro') * 100
+
+    def get_flight_time(self) -> int:
+        """Get the time the motors have been active in seconds
+        Returns:
+            int: flight time in s
+        """
+        return self.get_state_field('time')
 
     def get_battery(self) -> int:
         """Get current battery percentage
@@ -717,7 +764,7 @@ class Tello:
         """
         return self.send_control_command('ap %s %s' % (ssid, password))
 
-    def get_speed(self) -> int:
+    def query_speed(self) -> int:
         """Query speed setting (cm/s)
         Returns:
             int: 1-100
@@ -728,69 +775,75 @@ class Tello:
         """Get current battery percentage via a query command
         Using get_battery is usually faster
         Returns:
-            int: 0-100
+            int: 0-100 in %
         """
         return self.send_read_command('battery?')
 
-    def get_flight_time(self) -> int:
-        """Query current fly time (s)
+    def query_flight_time(self) -> int:
+        """Query current fly time (s).
+        Using get_flight_time is usually faster.
         Returns:
             int: Seconds elapsed during flight.
         """
         return self.send_read_command('time?')
 
     def query_height(self) -> int:
-        """Get height in cm via a query command
+        """Get height in cm via a query command.
         Using get_height is usually faster
         Returns:
             int: 0-3000
         """
         return self.send_read_command('height?')
 
-    def get_temperature(self) -> int:
-        """Query temperature (°C)
+    def query_temperature(self) -> int:
+        """Query temperature (°C).
+        Using get_temperature is usually faster.
         Returns:
             int: 0-90
         """
         return self.send_read_command('temp?')
 
-    def get_attitude(self) -> dict:
-        """Query IMU attitude data
+    def query_attitude(self) -> dict:
+        """Query IMU attitude data.
+        Using get_pitch, get_roll and get_yaw is usually faster.
         Returns:
             {'pitch': int, 'roll': int, 'yaw': int}
         """
-        r = self.send_read_command('attitude?').replace(';', ':').split(':')
-        return dict(zip(r[::2], [int(i) for i in r[1::2]]))  # {'pitch': xxx, 'roll': xxx, 'yaw': xxx}
+        response = self.send_read_command('attitude?')
+        return Tello.parse_state(response)
 
-    def get_barometer(self) -> int:
-        """Get barometer value (m)
+    def query_barometer(self) -> int:
+        """Get barometer value (cm)
+        Using get_barometer is usually faster.
         Returns:
             int: 0-100
         """
-        return self.send_read_command('baro?')
+        return self.send_read_command('baro?') * 100
 
-    def get_distance_tof(self) -> int:
+    def query_distance_tof(self) -> int:
         """Get distance value from TOF (cm)
+        Using get_distance_tof is usually faster.
         Returns:
-            int: 30-1000
+            float: 30-1000
         """
-        return self.send_read_command('tof?')
+        # example response: 801mm
+        return int(self.send_read_command('tof?')[:-2]) / 10
 
-    def get_wifi(self) -> str:
+    def query_wifi_signal_noise_ratio(self) -> str:
         """Get Wi-Fi SNR
         Returns:
             str: snr
         """
         return self.send_read_command('wifi?')
 
-    def get_sdk_version(self) -> str:
+    def query_sdk_version(self) -> str:
         """Get SDK Version
         Returns:
             str: SDK Version
         """
         return self.send_read_command('sdk?')
 
-    def get_serial_number(self) -> str:
+    def query_serial_number(self) -> str:
         """Get Serial Number
         Returns:
             str: Serial Number
