@@ -18,8 +18,8 @@ class Tello:
     """
     # Send and receive commands, client socket
     RESPONSE_TIMEOUT = 7  # in seconds
-    TIME_BTW_COMMANDS = 1  # in seconds
-    TIME_BTW_RC_CONTROL_COMMANDS = 0.5  # in seconds
+    TIME_BTW_COMMANDS = 0.1  # in seconds
+    TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
     RETRY_COUNT = 3  # number of retries after a failed command
     TELLO_IP = '192.168.10.1'  # Tello IP address
 

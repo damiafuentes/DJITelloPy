@@ -7,7 +7,8 @@ import time
 # Speed of the drone
 S = 60
 # Frames per second of the pygame window display
-FPS = 25
+# A low number also results in input lag, as input information is processed once per frame.
+FPS = 120
 
 
 class FrontEnd(object):
@@ -27,7 +28,7 @@ class FrontEnd(object):
 
         # Creat pygame window
         pygame.display.set_caption("Tello video stream")
-        self.screen = pygame.display.set_mode([640, 480])
+        self.screen = pygame.display.set_mode([960, 720])
 
         # Init Tello object that interacts with the Tello drone
         self.tello = Tello()
@@ -42,26 +43,16 @@ class FrontEnd(object):
         self.send_rc_control = False
 
         # create update timer
-        pygame.time.set_timer(pygame.USEREVENT + 1, 50)
+        pygame.time.set_timer(pygame.USEREVENT + 1, 1000 // FPS)
 
     def run(self):
 
-        if not self.tello.connect():
-            print("Tello not connected")
-            return
-
-        if not self.tello.set_speed(self.speed):
-            print("Not set speed to lowest possible")
-            return
+        self.tello.connect()
+        self.tello.set_speed(self.speed)
 
         # In case streaming is on. This happens when we quit this program without the escape key.
-        if not self.tello.streamoff():
-            print("Could not stop video stream")
-            return
-
-        if not self.tello.streamon():
-            print("Could not start video stream")
-            return
+        self.tello.streamoff()
+        self.tello.streamon()
 
         frame_read = self.tello.get_frame_read()
 
@@ -85,9 +76,15 @@ class FrontEnd(object):
                 break
 
             self.screen.fill([0, 0, 0])
-            frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_BGR2RGB)
+
+            frame = frame_read.frame
+            text = "Battery: {}%".format(self.tello.get_battery())
+            cv2.putText(frame, text, (5, 720 - 5),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = np.rot90(frame)
             frame = np.flipud(frame)
+
             frame = pygame.surfarray.make_surface(frame)
             self.screen.blit(frame, (0, 0))
             pygame.display.update()
@@ -133,15 +130,17 @@ class FrontEnd(object):
         elif key == pygame.K_a or key == pygame.K_d:  # set zero yaw velocity
             self.yaw_velocity = 0
         elif key == pygame.K_t:  # takeoff
-            self.send_rc_control = self.tello.takeoff()
+            self.tello.takeoff()
+            self.send_rc_control = True
         elif key == pygame.K_l:  # land
-            self.send_rc_control = not self.tello.land()
+            not self.tello.land()
+            self.send_rc_control = False
 
     def update(self):
         """ Update routine. Send velocities to Tello."""
         if self.send_rc_control:
-            self.tello.send_rc_control(self.left_right_velocity, self.for_back_velocity, self.up_down_velocity,
-                                       self.yaw_velocity)
+            self.tello.send_rc_control(self.left_right_velocity, self.for_back_velocity,
+                self.up_down_velocity, self.yaw_velocity)
 
 
 def main():
