@@ -1,8 +1,11 @@
 # DJITelloPy
-DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf) and [Tello EDU SDK](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf). Yes, this library has been tested with the drone. 
-Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/example.py) for a working example controlling the drone as a remote controller with the keyboard and the video stream in a window.  
+DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf) and [Tello EDU SDK](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf). This library has the following features:
 
-This library works with python >= 3.5.
+- implementation of all tello commands
+- easily retrieve a video stream
+- receive and parse state packets
+- control a swarm of drones
+- support for python >= 3.5
 
 Feel free to contribute!
 
@@ -29,9 +32,7 @@ $ pip install -r requirements.txt
 ### Simple example
 
 ```python
-from TelloSDKPy.djitellopy import Tello
-import cv2
-import time
+from djitellopy import Tello
 
 tello = Tello()
 
@@ -39,49 +40,20 @@ tello.connect()
 tello.takeoff()
 
 tello.move_left(100)
-tello.rotate_counter_clockwise(45)
+tello.rotate_counter_clockwise(90)
+tello.move_forward(100)
 
 tello.land()
-tello.end()
 ```
 
-### Example using opencv and the video stream
-Please see [example.py](https://github.com/damiafuentes/TelloSDKPy/blob/master/example.py). 
+### More examples
+In the [examples](examples/) directory there are some code examples:
 
-The controls are:
-- T: Takeoff
-- L: Land
-- W, A, S, D: Forward, backward, left and right.
-- E, Q: Counter clockwise and clockwise rotations
-- R, F: Up and down.
-- Ctrl+C to land and exit
-
-### Swarm example
-Only for Tello EDU's.
-```python
-from TelloSDKPy.djitellopy import TelloSwarm
-
-swarm = TelloSwarm.fromIps([
-    "192.168.178.42",
-    "192.168.178.43",
-    "192.168.178.44"
-])
-
-swarm.connect()
-swarm.takeoff()
-
-# run in parallel on all tellos
-swarm.move_up(100)
-
-# run by one tello after the other
-swarm.sequential(lambda i, tello: tello.move_forward(i * 20))
-
-# making each tello do something unique in parallel
-swarm.parallel(lambda i, tello: tello.move_left(i * 100))
-
-swarm.land()
-swarm.end()
-```
+- [taking a picture](examples/take-picture.py)
+- [recording a video](examples/record-video.py)
+- [flying a swarm (multiple tellos at once)](examples/simple-swarm.py)
+- [simple controlling using your keyboard](examples/manual-control-opencv.py)
+- [fully featured manual control using pygame](examples/manual-control-pygame.py)
 
 ### Notes
 - If you are using the ```streamon``` command and the response is ```Unknown command``` means you have to update the Tello firmware. That can be done through the Tello app.
