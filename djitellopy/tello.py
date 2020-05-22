@@ -634,7 +634,7 @@ class Tello:
             z: 20-500
             speed: 10-100
         """
-        return self.send_command_without_return('go %s %s %s %s' % (x, y, z, speed))
+        return self.send_control_command('go %s %s %s %s' % (x, y, z, speed))
 
     def curve_xyz_speed(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int):
         """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
@@ -653,7 +653,7 @@ class Tello:
             z2: -500-500
             speed: 10-60
         """
-        return self.send_command_without_return('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
+        return self.send_control_command('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
 
     def go_xyz_speed_mid(self, x: int, y: int, z: int, speed: int, mid: int):
         """Fly to x y z relative to the mission pad with id mid.
@@ -755,14 +755,14 @@ class Tello:
     def set_wifi_credentials(self, ssid, password):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
         """
-        return self.send_control_command('wifi %s %s' % (ssid, password))
+        return self.send_command_without_return('wifi %s %s' % (ssid, password))
 
     def connect_to_wifi(self, ssid, password):
         """Connects to the Wi-Fi with SSID and password.
         After this command the tello will reboot.
         Only works with Tello EDUs.
         """
-        return self.send_control_command('ap %s %s' % (ssid, password))
+        return self.send_command_without_return('ap %s %s' % (ssid, password))
 
     def query_speed(self) -> int:
         """Query speed setting (cm/s)
