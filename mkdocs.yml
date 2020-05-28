@@ -1,0 +1,19 @@
+site_name: DJITelloPy API Reference
+
+theme:
+  name: "material"
+
+markdown_extensions:
+  - admonition
+  - codehilite
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
+      watch:
+        - djitellopy/
