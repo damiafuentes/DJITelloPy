@@ -1,0 +1,5 @@
+mkdocs>=1.1.2
+mkdocs-material>=5.2.2
+mkdocstrings>=0.11.2
+numpy==1.15.4
+opencv-python==3.4.3.18
