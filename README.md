@@ -29,6 +29,10 @@ $ pip install -r requirements.txt
 
 ## Usage
 
+### API Reference
+
+See [djitellopy.readthedocs.io](https://djitellopy.readthedocs.io/en/latest/) for a full reference of all classes and methods available.
+
 ### Simple example
 
 ```python
