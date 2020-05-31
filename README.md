@@ -19,6 +19,18 @@ For Linux distributions with both python2 and python3 (e.g. Debian, Ubuntu, ...)
 $ pip3 install https://github.com/damiafuentes/DJITelloPy/archive/master.zip
 ```
 
+### Install in developer mode
+Run the following command from the root directory that contains the file `setup.py` to install `djitellopy` from its working directory in developer mode.
+
+It is recommended to install this package in a virtual environment. Check [Virtual Environments and Packages Tutorial](https://docs.python.org/3/tutorial/venv.html) 
+to learn how to create and activate a Python virtual environment.
+
+```
+$ pip install -e .
+```
+
+The `-e` option will install the package in _editable_ or _developer_ mode so every time you make a change it will be included in the package automatically.
+
 ## Install using git clone
 ```
 $ pip install --upgrade pip
