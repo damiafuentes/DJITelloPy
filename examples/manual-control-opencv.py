@@ -28,7 +28,7 @@ while True:
     elif key == ord('w'):
         tello.move_forward(30)
     elif key == ord('s'):
-        tello.move_down(30)
+        tello.move_back(30)
     elif key == ord('a'):
         tello.move_left(30)
     elif key == ord('d'):
