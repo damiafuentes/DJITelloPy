@@ -5,8 +5,10 @@ import time
 import threading
 import cv2 # type: ignore
 from threading import Thread
+from typing import Optional
 
-drones = None
+threads_initialized = False
+drones: Optional[dict] = {}
 client_socket: socket.socket
 
 
@@ -70,8 +72,8 @@ class Tello:
     }
 
     # VideoCapture object
-    cap: cv2.VideoCapture
-    background_frame_read: 'BackgroundFrameRead'
+    cap: Optional[cv2.VideoCapture] = None
+    background_frame_read: Optional['BackgroundFrameRead'] = None
 
     stream_on = False
     is_flying = False
@@ -80,7 +82,7 @@ class Tello:
                  host=TELLO_IP,
                  retry_count=RETRY_COUNT):
 
-        global drones
+        global threads_initialized, drones
 
         self.address = (host, Tello.CONTROL_UDP_PORT)
         self.stream_on = False
@@ -88,9 +90,7 @@ class Tello:
         self.last_received_command_timestamp = time.time()
         self.last_rc_control_timestamp = time.time()
 
-        if drones is None:
-            drones = {}
-
+        if not threads_initialized:
             # Run Tello command responses UDP receiver on background
             response_receiver_thread = threading.Thread(target=Tello.udp_response_receiver)
             response_receiver_thread.daemon = True
@@ -100,6 +100,8 @@ class Tello:
             state_receiver_thread = threading.Thread(target=Tello.udp_state_receiver)
             state_receiver_thread.daemon = True
             state_receiver_thread.start()
+
+            threads_initialized = True
 
         drones[host] = {
             'responses': [],
