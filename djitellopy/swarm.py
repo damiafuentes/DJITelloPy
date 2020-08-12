@@ -1,11 +1,14 @@
 from .tello import Tello
 from threading import Thread, Barrier
 from queue import Queue
+from typing import List
 
 
 class TelloSwarm:
 	"""Swarm library for controlling multiple Tellos simultaneously
 	"""
+
+	funcQueues: List[Queue]
 
 	@staticmethod
 	def fromFile(path: str):

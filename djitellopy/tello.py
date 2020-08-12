@@ -3,11 +3,11 @@ import logging
 import socket
 import time
 import threading
-import cv2
+import cv2 # type: ignore
 from threading import Thread
 
 drones = None
-client_socket = None
+client_socket: socket.socket
 
 
 class Tello:
@@ -70,8 +70,8 @@ class Tello:
     }
 
     # VideoCapture object
-    cap = None
-    background_frame_read = None
+    cap: cv2.VideoCapture
+    background_frame_read: 'BackgroundFrameRead'
 
     stream_on = False
     is_flying = False
@@ -205,7 +205,7 @@ class Tello:
         """
         return self.get_own_udp_object()['state']
 
-    def get_state_field(self, key: str) -> any:
+    def get_state_field(self, key: str):
         """Get a specific sate field by name.
         Internal method, you normally wouldn't call this yourself.
         """
@@ -404,7 +404,7 @@ class Tello:
     def stop_video_capture(self):
         return self.streamoff()
 
-    def send_command_with_return(self, command: str, timeout: int = RESPONSE_TIMEOUT):
+    def send_command_with_return(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> str:
         """Send command to Tello and wait for its response.
         Internal method, you normally wouldn't call this yourself.
         Return:
@@ -425,7 +425,7 @@ class Tello:
         while len(responses) == 0:
             if time.time() - timestamp > timeout:
                 self.LOGGER.warning('Timeout exceed on command ' + command)
-                return False
+                return "Timeout error!"
             else:
                 time.sleep(0.1)
 
@@ -446,11 +446,11 @@ class Tello:
         self.LOGGER.info('Send command (no expect response): ' + command)
         client_socket.sendto(command.encode('utf-8'), self.address)
 
-    def send_control_command(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> str:
+    def send_control_command(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> bool:
         """Send control command to Tello and wait for its response.
         Internal method, you normally wouldn't call this yourself.
         """
-        response = None
+        response = "max retries exceeded"
         for i in range(0, self.retry_count):
             response = self.send_command_with_return(command, timeout=timeout)
 
@@ -459,10 +459,11 @@ class Tello:
 
             self.LOGGER.debug('Command attempt {} for {} failed'.format(i, command))
 
-        return self.raise_result_error(command, response)
+        self.raise_result_error(command, response)
+        return False # never reached
 
     def send_read_command(self, command: str) -> str:
-        """Send set command to Tello and wait for its response.
+        """Send given command to Tello and wait for its response.
         Internal method, you normally wouldn't call this yourself.
         """
 
@@ -475,6 +476,7 @@ class Tello:
             pass
 
         if ('error' not in response) and ('ERROR' not in response) and ('False' not in response):
+            return response
             if response.isdigit():
                 return int(response)
             else:
@@ -483,15 +485,32 @@ class Tello:
                 except ValueError:
                     return response
         else:
-            return self.raise_result_error(command, response)
+            self.raise_result_error(command, response)
+            return "error: this code should never be reached"
 
-    def raise_result_error(self, command: str, response: any) -> bool:
+    def send_read_command_int(self, command: str) -> int:
+        """Send given command to Tello and wait for its response.
+        Parses the response to an integer
+        Internal method, you normally wouldn't call this yourself.
+        """
+        response = self.send_read_command(command)
+        return int(response)
+
+    def send_read_command_float(self, command: str) -> float:
+        """Send given command to Tello and wait for its response.
+        Parses the response to an integer
+        Internal method, you normally wouldn't call this yourself.
+        """
+        response = self.send_read_command(command)
+        return float(response)
+
+    def raise_result_error(self, command: str, response: str) -> bool:
         raise Exception('Command {} was unsuccessful. Message: {}'.format(command, response))
 
     def connect(self):
         """Enter SDK mode. Call this before any of the control functions.
         """
-        return self.send_control_command("command")
+        self.send_control_command("command")
 
     def takeoff(self):
         """Automatic takeoff
@@ -530,7 +549,7 @@ class Tello:
     def emergency(self):
         """Stop all motors immediately.
         """
-        return self.send_control_command("emergency")
+        self.send_control_command("emergency")
 
     def move(self, direction: str, x: int):
         """Tello fly up, down, left, right, forward or back with distance x cm.
@@ -539,63 +558,63 @@ class Tello:
             direction: up, down, left, right, forward or back
             x: 20-500
         """
-        return self.send_control_command(direction + ' ' + str(x))
+        self.send_control_command(direction + ' ' + str(x))
 
     def move_up(self, x: int):
         """Fly x cm up.
         Arguments:
             x: 20-500
         """
-        return self.move("up", x)
+        self.move("up", x)
 
     def move_down(self, x: int):
         """Fly x cm down.
         Arguments:
             x: 20-500
         """
-        return self.move("down", x)
+        self.move("down", x)
 
     def move_left(self, x: int):
         """Fly x cm left.
         Arguments:
             x: 20-500
         """
-        return self.move("left", x)
+        self.move("left", x)
 
     def move_right(self, x: int):
         """Fly x cm right.
         Arguments:
             x: 20-500
         """
-        return self.move("right", x)
+        self.move("right", x)
 
     def move_forward(self, x: int):
         """Fly x cm forward.
         Arguments:
             x: 20-500
         """
-        return self.move("forward", x)
+        self.move("forward", x)
 
     def move_back(self, x: int):
         """Fly x cm backwards.
         Arguments:
             x: 20-500
         """
-        return self.move("back", x)
+        self.move("back", x)
 
     def rotate_clockwise(self, x: int):
         """Rotate x degree clockwise.
         Arguments:
             x: 1-360
         """
-        return self.send_control_command("cw " + str(x))
+        self.send_control_command("cw " + str(x))
 
     def rotate_counter_clockwise(self, x: int):
         """Rotate x degree counter-clockwise.
         Arguments:
             x: 1-3600
         """
-        return self.send_control_command("ccw " + str(x))
+        self.send_control_command("ccw " + str(x))
 
     def flip(self, direction: str):
         """Do a flip maneuver.
@@ -603,27 +622,27 @@ class Tello:
         Arguments:
             direction: l (left), r (right), f (forward) or b (back)
         """
-        return self.send_control_command("flip " + direction)
+        self.send_control_command("flip " + direction)
 
     def flip_left(self):
         """Flip to the left.
         """
-        return self.flip("l")
+        self.flip("l")
 
     def flip_right(self):
         """Flip to the right.
         """
-        return self.flip("r")
+        self.flip("r")
 
     def flip_forward(self):
         """Flip forward.
         """
-        return self.flip("f")
+        self.flip("f")
 
     def flip_back(self):
         """Flip backwards.
         """
-        return self.flip("b")
+        self.flip("b")
 
     def go_xyz_speed(self, x: int, y: int, z: int, speed: int):
         """Fly to x y z relative to the current position.
@@ -634,7 +653,7 @@ class Tello:
             z: 20-500
             speed: 10-100
         """
-        return self.send_control_command('go %s %s %s %s' % (x, y, z, speed))
+        self.send_control_command('go %s %s %s %s' % (x, y, z, speed))
 
     def curve_xyz_speed(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int):
         """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
@@ -653,7 +672,7 @@ class Tello:
             z2: -500-500
             speed: 10-60
         """
-        return self.send_control_command('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
+        self.send_control_command('curve %s %s %s %s %s %s %s' % (x1, y1, z1, x2, y2, z2, speed))
 
     def go_xyz_speed_mid(self, x: int, y: int, z: int, speed: int, mid: int):
         """Fly to x y z relative to the mission pad with id mid.
@@ -665,7 +684,7 @@ class Tello:
             speed: 10-100
             mid: 1-8
         """
-        return self.send_control_command('go %s %s %s %s m%s' % (x, y, z, speed, mid))
+        self.send_control_command('go %s %s %s %s m%s' % (x, y, z, speed, mid))
 
     def curve_xyz_speed_mid(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int, mid: int):
         """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
@@ -685,7 +704,7 @@ class Tello:
             speed: 10-60
             mid: 1-8
         """
-        return self.send_control_command('curve %s %s %s %s %s %s %s m%s' % (x1, y1, z1, x2, y2, z2, speed, mid))
+        self.send_control_command('curve %s %s %s %s %s %s %s m%s' % (x1, y1, z1, x2, y2, z2, speed, mid))
 
     def go_xyz_speed_yaw_mid(self, x: int, y: int, z: int, speed: int, yaw: int, mid1: int, mid2: int):
         """Fly to x y z relative to mid1.
@@ -700,17 +719,17 @@ class Tello:
             mid1: 1-8
             mid2: 1-8
         """
-        return self.send_control_command('jump %s %s %s %s %s m%s m%s' % (x, y, z, speed, yaw, mid1, mid2))
+        self.send_control_command('jump %s %s %s %s %s m%s m%s' % (x, y, z, speed, yaw, mid1, mid2))
 
     def enable_mission_pads(self):
         """Enable mission pad detection
         """
-        return self.send_control_command("mon")
+        self.send_control_command("mon")
 
     def disable_mission_pads(self):
         """Disable mission pad detection
         """
-        return self.send_control_command("moff")
+        self.send_control_command("moff")
 
     def set_mission_pad_detection_direction(self, x):
         """Set mission pad detection direction. enable_mission_pads needs to be
@@ -719,14 +738,14 @@ class Tello:
         Arguments:
             x: 0 downwards only, 1 forwards only, 2 both directions
         """
-        return self.send_control_command("mdirection " + str(x))
+        self.send_control_command("mdirection " + str(x))
 
     def set_speed(self, x: int):
         """Set speed to x cm/s.
         Arguments:
             x: 10-100
         """
-        return self.send_control_command("speed " + str(x))
+        self.send_control_command("speed " + str(x))
 
     def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int,
                         yaw_velocity: int):
@@ -737,39 +756,38 @@ class Tello:
             up_down_velocity: -100~100 (up/down)
             yaw_velocity: -100~100 (yaw)
         """
+        def round_to_100(x: int):
+            if x > 100:
+                return 100
+            if x < -100:
+                return -100
+            return x
+
         if time.time() - self.last_rc_control_timestamp > self.TIME_BTW_RC_CONTROL_COMMANDS:
             self.last_rc_control_timestamp = time.time()
-            return self.send_command_without_return('rc %s %s %s %s' % (self.round_to_100(left_right_velocity),
-                                                                        self.round_to_100(forward_backward_velocity),
-                                                                        self.round_to_100(up_down_velocity),
-                                                                        self.round_to_100(yaw_velocity)))
-
-    def round_to_100(self, x: int):
-        if x > 100:
-            return 100
-        elif x < -100:
-            return -100
-        else:
-            return x
+            self.send_command_without_return('rc %s %s %s %s' % (round_to_100(left_right_velocity),
+                                                                round_to_100(forward_backward_velocity),
+                                                                round_to_100(up_down_velocity),
+                                                                round_to_100(yaw_velocity)))
 
     def set_wifi_credentials(self, ssid, password):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
         """
-        return self.send_command_without_return('wifi %s %s' % (ssid, password))
+        self.send_command_without_return('wifi %s %s' % (ssid, password))
 
     def connect_to_wifi(self, ssid, password):
         """Connects to the Wi-Fi with SSID and password.
         After this command the tello will reboot.
         Only works with Tello EDUs.
         """
-        return self.send_command_without_return('ap %s %s' % (ssid, password))
+        self.send_command_without_return('ap %s %s' % (ssid, password))
 
     def query_speed(self) -> int:
         """Query speed setting (cm/s)
         Returns:
             int: 1-100
         """
-        return self.send_read_command('speed?')
+        return self.send_read_command_int('speed?')
 
     def query_battery(self) -> int:
         """Get current battery percentage via a query command
@@ -777,7 +795,7 @@ class Tello:
         Returns:
             int: 0-100 in %
         """
-        return self.send_read_command('battery?')
+        return self.send_read_command_int('battery?')
 
     def query_flight_time(self) -> int:
         """Query current fly time (s).
@@ -785,7 +803,7 @@ class Tello:
         Returns:
             int: Seconds elapsed during flight.
         """
-        return self.send_read_command('time?')
+        return self.send_read_command_int('time?')
 
     def query_height(self) -> int:
         """Get height in cm via a query command.
@@ -793,7 +811,7 @@ class Tello:
         Returns:
             int: 0-3000
         """
-        return self.send_read_command('height?')
+        return self.send_read_command_int('height?')
 
     def query_temperature(self) -> int:
         """Query temperature (°C).
@@ -801,7 +819,7 @@ class Tello:
         Returns:
             int: 0-90
         """
-        return self.send_read_command('temp?')
+        return self.send_read_command_int('temp?')
 
     def query_attitude(self) -> dict:
         """Query IMU attitude data.
@@ -818,9 +836,9 @@ class Tello:
         Returns:
             int: 0-100
         """
-        return self.send_read_command('baro?') * 100
+        return self.send_read_command_int('baro?') * 100
 
-    def query_distance_tof(self) -> int:
+    def query_distance_tof(self) -> float:
         """Get distance value from TOF (cm)
         Using get_distance_tof is usually faster.
         Returns:
