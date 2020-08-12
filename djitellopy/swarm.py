@@ -8,7 +8,11 @@ class TelloSwarm:
 	"""Swarm library for controlling multiple Tellos simultaneously
 	"""
 
+	tellos: List['Tello']
+	barrier: Barrier
+	funcBarier: Barrier
 	funcQueues: List[Queue]
+	threads: List[Thread]
 
 	@staticmethod
 	def fromFile(path: str):
@@ -38,7 +42,7 @@ class TelloSwarm:
 
 		return TelloSwarm(tellos)
 
-	def __init__(self, tellos: list):
+	def __init__(self, tellos: List['Tello']):
 		"""Initialize a TelloSwarm instance
 
 		Arguments:
