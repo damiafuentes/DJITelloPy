@@ -7,11 +7,13 @@ import cv2 # type: ignore
 from threading import Thread
 from typing import Optional
 
+from .enforce_types import enforce_types
+
 threads_initialized = False
 drones: Optional[dict] = {}
 client_socket: socket.socket
 
-
+@enforce_types
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
     Tello API documentation:

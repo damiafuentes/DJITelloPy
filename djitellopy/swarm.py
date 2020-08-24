@@ -1,9 +1,11 @@
-from .tello import Tello
 from threading import Thread, Barrier
 from queue import Queue
 from typing import List, Callable
 
+from .tello import Tello
+from .enforce_types import enforce_types
 
+@enforce_types
 class TelloSwarm:
 	"""Swarm library for controlling multiple Tellos simultaneously
 	"""
