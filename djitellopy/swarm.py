@@ -1,14 +1,14 @@
 from .tello import Tello
 from threading import Thread, Barrier
 from queue import Queue
-from typing import List
+from typing import List, Callable
 
 
 class TelloSwarm:
 	"""Swarm library for controlling multiple Tellos simultaneously
 	"""
 
-	tellos: List['Tello']
+	tellos: List[Tello]
 	barrier: Barrier
 	funcBarier: Barrier
 	funcQueues: List[Queue]
@@ -42,7 +42,7 @@ class TelloSwarm:
 
 		return TelloSwarm(tellos)
 
-	def __init__(self, tellos: List['Tello']):
+	def __init__(self, tellos: List[Tello]):
 		"""Initialize a TelloSwarm instance
 
 		Arguments:
@@ -69,7 +69,7 @@ class TelloSwarm:
 			thread.start()
 			self.threads.append(thread)
 
-	def sequential(self, func):
+	def sequential(self, func: Callable[[int, Tello], None]):
 		"""Call `func` for each tello sequentially. The function retrieves
 		two arguments: The index `i` of the current drone and `tello` the
 		current [Tello][tello] instance.
@@ -82,7 +82,7 @@ class TelloSwarm:
 		for i, tello in enumerate(self.tellos):
 			func(i, tello)
 
-	def parallel(self, func):
+	def parallel(self, func: Callable[[int, Tello], None]):
 		"""Call `func` for each tello in parallel. The function retrieves
 		two arguments: The index `i` of the current drone and `tello` the
 		current [Tello][tello] instance.
