@@ -5,7 +5,7 @@ DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.r
 - easily retrieve a video stream
 - receive and parse state packets
 - control a swarm of drones
-- support for python >= 3.5
+- support for python >= 3.6
 
 Feel free to contribute!
 

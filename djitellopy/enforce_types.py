@@ -9,6 +9,15 @@ from functools import wraps
 # the code was adapted to be able to wrap all methods of a class by simply
 # adding the decorator to the class itself
 
+def _is_unparameterized_special_typing(type_hint):
+    # Check for typing.Any, typing.Union, typing.ClassVar (without parameters)
+    if hasattr(typing, "_SpecialForm"):
+        return isinstance(type_hint, typing._SpecialForm)
+    elif hasattr(type_hint, "__origin__"):
+        return type_hint.__origin__ is None
+    else:
+        return False
+
 def enforce_types(target):
     def check_types(spec, *args, **kwargs):
         parameters = dict(zip(spec.args, args))
@@ -16,19 +25,13 @@ def enforce_types(target):
         for name, value in parameters.items():
             with suppress(KeyError):  # Assume un-annotated parameters can be any type
                 type_hint = spec.annotations[name]
-                if isinstance(type_hint, typing._SpecialForm):
-                    # No check for typing.Any, typing.Union, typing.ClassVar (without parameters)
+                if _is_unparameterized_special_typing(type_hint):
                     continue
-                try:
-                    actual_type = type_hint.__origin__
-                except AttributeError:
-                    # In case of non-typing types (such as <class 'int'>, for instance)
-                    actual_type = type_hint
-                # In Python 3.8 one would replace the try/except with
-                # actual_type = typing.get_origin(type_hint) or type_hint
-                if isinstance(actual_type, typing._SpecialForm):
-                    # case of typing.Union[…] or typing.ClassVar[…]
+
+                if hasattr(type_hint, "__args__") and type_hint.__args__ is not None:
                     actual_type = type_hint.__args__
+                else:
+                    actual_type = type_hint
 
                 if not isinstance(value, actual_type):
                     raise TypeError('Unexpected type for \'{}\' (expected {} but found {})'.format(name, type_hint, type(value)))
