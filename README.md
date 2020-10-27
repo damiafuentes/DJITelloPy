@@ -19,25 +19,14 @@ For Linux distributions with both python2 and python3 (e.g. Debian, Ubuntu, ...)
 $ pip3 install https://github.com/damiafuentes/DJITelloPy/archive/master.zip
 ```
 
-## Install using git clone
+## Install in developer mode
+Using the commands below you can install the repository in an _editable_ way. This allows you to modify the library and use the modified version as if you had installed it regularly.
+
 ```
-$ pip install --upgrade pip
-$ git clone https://github.com/damiafuentes/TelloSDKPy.git
+$ git clone https://github.com/damiafuentes/DJITelloPy.git
 $ cd TelloSDKPy
-$ pip install -r requirements.txt
-```
-
-### Install in developer mode
-Run the following command from the root directory that contains the file `setup.py` to install `djitellopy` from its working directory in developer mode.
-
-It is recommended to install this package in a virtual environment. Check [Virtual Environments and Packages Tutorial](https://docs.python.org/3/tutorial/venv.html) 
-to learn how to create and activate a Python virtual environment.
-
-```
 $ pip install -e .
 ```
-
-The `-e` option will install the package in _editable_ or _developer_ mode so every time you make a change it will be included in the package automatically.
 
 ## Usage
 
