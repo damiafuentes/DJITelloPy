@@ -9,9 +9,11 @@ from typing import Optional
 
 from .enforce_types import enforce_types
 
-threads_initialized = False
+threads_running = False
 drones: Optional[dict] = {}
 client_socket: socket.socket
+response_receiver_thread: Thread
+state_receiver_thread: Thread
 
 @enforce_types
 class Tello:
@@ -84,7 +86,7 @@ class Tello:
                  host=TELLO_IP,
                  retry_count=RETRY_COUNT):
 
-        global threads_initialized, drones
+        global threads_running, drones, response_receiver_thread, state_receiver_thread
 
         self.address = (host, Tello.CONTROL_UDP_PORT)
         self.stream_on = False
@@ -92,7 +94,9 @@ class Tello:
         self.last_received_command_timestamp = time.time()
         self.last_rc_control_timestamp = time.time()
 
-        if not threads_initialized:
+        if not threads_running:
+            threads_running = True
+
             # Run Tello command responses UDP receiver on background
             response_receiver_thread = threading.Thread(target=Tello.udp_response_receiver)
             response_receiver_thread.daemon = True
@@ -102,8 +106,6 @@ class Tello:
             state_receiver_thread = threading.Thread(target=Tello.udp_state_receiver)
             state_receiver_thread.daemon = True
             state_receiver_thread.start()
-
-            threads_initialized = True
 
         drones[host] = {
             'responses': [],
@@ -122,12 +124,13 @@ class Tello:
         Must be run from a background thread in order to not block the main thread.
         Internal method, you normally wouldn't call this yourself.
         """
-        global client_socket
+        global threads_running, client_socket
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        client_socket.settimeout(1)
         client_socket.bind(('', Tello.CONTROL_UDP_PORT))
 
-        while True:
+        while threads_running:
             try:
                 data, address = client_socket.recvfrom(1024)
 
@@ -139,9 +142,14 @@ class Tello:
 
                 drones[address]['responses'].append(data)
 
+            except socket.timeout:
+                continue
             except Exception as e:
                 Tello.LOGGER.error(e)
                 break
+
+        Tello.LOGGER.info('UDP packet receiver thread exiting...')
+        client_socket.close()
 
     @staticmethod
     def udp_state_receiver():
@@ -150,10 +158,13 @@ class Tello:
         the main thread.
         Internal method, you normally wouldn't call this yourself.
         """
+        global threads_running
+
         state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        state_socket.settimeout(1)
         state_socket.bind(('', Tello.STATE_UDP_PORT))
 
-        while True:
+        while threads_running:
             try:
                 data, address = state_socket.recvfrom(1024)
 
@@ -166,9 +177,14 @@ class Tello:
                 data = data.decode('ASCII')
                 drones[address]['state'] = Tello.parse_state(data)
 
+            except socket.timeout:
+                continue
             except Exception as e:
                 Tello.LOGGER.error(e)
                 break
+
+        Tello.LOGGER.info('state receiver thread exiting...')
+        state_socket.close()
 
     @staticmethod
     def parse_state(state: str) -> dict:
@@ -875,6 +891,8 @@ class Tello:
     def end(self):
         """Call this method when you want to end the tello object
         """
+        global threads_running, response_receiver_thread, state_receiver_thread
+
         if self.is_flying:
             self.land()
         if self.stream_on:
@@ -887,6 +905,12 @@ class Tello:
         host = self.address[0]
         if host in drones:
             del drones[host]
+
+        if len(drones) == 0 and threads_running:
+            # setting this to False will cause the threads to close the sockets and then exit
+            threads_running = False
+            response_receiver_thread.join()
+            state_receiver_thread.join()
 
     def __del__(self):
         self.end()
