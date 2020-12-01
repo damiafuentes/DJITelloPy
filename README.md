@@ -56,13 +56,15 @@ In the [examples](examples/) directory there are some code examples:
 
 - [taking a picture](examples/take-picture.py)
 - [recording a video](examples/record-video.py)
-- [flying a swarm (multiple tellos at once)](examples/simple-swarm.py)
+- [flying a swarm (multiple Tellos at once)](examples/simple-swarm.py)
 - [simple controlling using your keyboard](examples/manual-control-opencv.py)
+- [control by using mission pads](examples/mission-pads.py)
 - [fully featured manual control using pygame](examples/manual-control-pygame.py)
 
 ### Notes
 - If you are using the ```streamon``` command and the response is ```Unknown command``` means you have to update the Tello firmware. That can be done through the Tello app.
 - Mission pad detection and navigation is only supported by the Tello EDU.
+    - Bright environment is necessary for successful use of mission pads
 - Connecting to an existing wifi network is only supported by the Tello EDU.
 - When connected to an existing wifi network video streaming is not available.
 
