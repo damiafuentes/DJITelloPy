@@ -24,7 +24,7 @@ Using the commands below you can install the repository in an _editable_ way. Th
 
 ```
 $ git clone https://github.com/damiafuentes/DJITelloPy.git
-$ cd TelloSDKPy
+$ cd DJITelloPy
 $ pip install -e .
 ```
 
