@@ -511,10 +511,21 @@ class Tello:
     def raise_result_error(self, command: str, response: str) -> bool:
         raise Exception('Command {} was unsuccessful. Message: {}'.format(command, response))
 
-    def connect(self):
+    def connect(self, wait_for_state=True):
         """Enter SDK mode. Call this before any of the control functions.
         """
         self.send_control_command("command")
+
+        if wait_for_state:
+            for i in range(20):
+                if self.get_current_state():
+                    Tello.LOGGER.debug('connect() received first state packet after {} seconds'.format(i * 0.05))
+                    break
+
+                time.sleep(0.05)
+
+            if not self.get_current_state():
+                raise Exception('Did not receive a state packet from the Tello')
 
     def takeoff(self):
         """Automatic takeoff
