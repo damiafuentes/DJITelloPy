@@ -402,7 +402,8 @@ class Tello:
             BackgroundFrameRead
         """
         if self.background_frame_read is None:
-            self.background_frame_read = BackgroundFrameRead(self, self.get_udp_video_address()).start()
+            self.background_frame_read = BackgroundFrameRead(self, self.get_udp_video_address())
+            self.background_frame_read.start()
         return self.background_frame_read
 
     def stop_video_capture(self):
@@ -917,11 +918,14 @@ class BackgroundFrameRead:
             self.cap.open(address)
 
         self.grabbed, self.frame = self.cap.read()
+        if not self.grabbed or self.frame is None:
+            raise Exception('Failed to grab first frame from video stream')
+
         self.stopped = False
+        self.worker = Thread(target=self.update_frame, args=(), daemon=True)
 
     def start(self):
-        Thread(target=self.update_frame, args=(), daemon=True).start()
-        return self
+        self.worker.start()
 
     def update_frame(self):
         while not self.stopped:
@@ -932,3 +936,4 @@ class BackgroundFrameRead:
 
     def stop(self):
         self.stopped = True
+        self.worker.join()
