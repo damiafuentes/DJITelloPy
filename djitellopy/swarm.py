@@ -150,7 +150,7 @@ class TelloSwarm:
 		"""Return the amount of tellos in the swarm
 
 		```python
-		print("Tello count: ".format(len(swarm)))
+		print("Tello count: {}".format(len(swarm)))
 		```
 		"""
 		return len(self.tellos)
