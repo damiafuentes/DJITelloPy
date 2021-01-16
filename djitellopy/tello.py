@@ -84,7 +84,7 @@ class Tello:
                  host=TELLO_IP,
                  retry_count=RETRY_COUNT):
 
-        global threads_initialized, drones
+        global threads_initialized, client_socket, drones
 
         self.address = (host, Tello.CONTROL_UDP_PORT)
         self.stream_on = False
@@ -94,6 +94,8 @@ class Tello:
 
         if not threads_initialized:
             # Run Tello command responses UDP receiver on background
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            client_socket.bind(('', Tello.CONTROL_UDP_PORT))
             response_receiver_thread = threading.Thread(target=Tello.udp_response_receiver)
             response_receiver_thread.daemon = True
             response_receiver_thread.start()
@@ -122,11 +124,6 @@ class Tello:
         Must be run from a background thread in order to not block the main thread.
         Internal method, you normally wouldn't call this yourself.
         """
-        global client_socket
-
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        client_socket.bind(('', Tello.CONTROL_UDP_PORT))
-
         while True:
             try:
                 data, address = client_socket.recvfrom(1024)
