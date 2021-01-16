@@ -9,6 +9,7 @@ from typing import Optional
 
 from .enforce_types import enforce_types
 
+
 threads_initialized = False
 drones: Optional[dict] = {}
 client_socket: socket.socket
@@ -43,36 +44,23 @@ class Tello:
     LOGGER = logging.getLogger('djitellopy')
     LOGGER.addHandler(HANDLER)
     LOGGER.setLevel(logging.INFO)
-    # use Tello.LOGGER.setLevel(logging.<LEVEL>) in YOUR CODE
+    # Use Tello.LOGGER.setLevel(logging.<LEVEL>) in YOUR CODE
     # to only receive logs of the desired level and higher
 
-    # conversion functions for state protocol fields
-    state_field_converters = {
+    # Conversion functions for state protocol fields
+    FLOATS = ['baro', 'agx', 'agy', 'agz']
+    INTS = [
         # Tello EDU with mission pads enabled only
-        'mid': int,
-        'x': int,
-        'y': int,
-        'z': int,
+        'mid', 'x', 'y', 'z',
         # 'mpry': (custom format 'x,y,z')
-
-        # common entries
-        'pitch': int,
-        'roll': int,
-        'yaw': int,
-        'vgx': int,
-        'vgy': int,
-        'vgz': int,
-        'templ': int,
-        'temph': int,
-        'tof': int,
-        'h': int,
-        'bat': int,
-        'baro': float,
-        'time': int,
-        'agx': float,
-        'agy': float,
-        'agz': float,
-    }
+        # Common entries
+        'pitch', 'roll', 'yaw',
+        'vgx', 'vgy', 'vgz',
+        'templ', 'temph',
+        'tof', 'h', 'bat', 'time'
+    ]
+    state_field_converters = {key : int for key in INTS}
+    state_field_converters.update({key : float for key in FLOATS})
 
     # VideoCapture object
     cap: Optional[cv2.VideoCapture] = None
@@ -106,10 +94,7 @@ class Tello:
 
             threads_initialized = True
 
-        drones[host] = {
-            'responses': [],
-            'state': {},
-        }
+        drones[host] = dict(responses=[], state={})
 
     def get_own_udp_object(self):
         global drones
@@ -126,7 +111,7 @@ class Tello:
         global client_socket
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        client_socket.bind(('', Tello.CONTROL_UDP_PORT))
+        client_socket.bind((str(), Tello.CONTROL_UDP_PORT))
 
         while True:
             try:
@@ -152,7 +137,7 @@ class Tello:
         Internal method, you normally wouldn't call this yourself.
         """
         state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        state_socket.bind(('', Tello.STATE_UDP_PORT))
+        state_socket.bind((str(), Tello.STATE_UDP_PORT))
 
         while True:
             try:
@@ -192,11 +177,12 @@ class Tello:
             value = split[1]
 
             if key in Tello.state_field_converters:
+                num_type = Tello.state_field_converters[key]
                 try:
-                    value = Tello.state_field_converters[key](value)
+                    value = num_type(value)
                 except Exception as e:
                     Tello.LOGGER.debug('Error parsing state value for {}: {} to {}'
-                                       .format(key, value, Tello.state_field_converters[key]))
+                                       .format(key, value, num_type))
                     Tello.LOGGER.error(e)
 
             state_dict[key] = value
@@ -219,7 +205,7 @@ class Tello:
         if key in state:
             return state[key]
         else:
-            raise Exception('Could not get state property ' + key)
+            raise Exception('Could not get state property: ' + key)
 
     def get_mission_pad_id(self) -> int:
         """Mission pad ID of the currently detected mission pad
@@ -463,7 +449,7 @@ class Tello:
             if response in ['ok', 'OK']:
                 return True
 
-            self.LOGGER.debug('Command attempt #{} for {} failed'.format(i, command))
+            self.LOGGER.debug('Command attempt #{} failed for: {}'.format(i, command))
 
         self.raise_result_error(command, response)
         return False # never reached
@@ -481,8 +467,8 @@ class Tello:
             self.LOGGER.error(e)
             pass
 
-        if ('error' not in response) and ('ERROR' not in response) and ('False' not in response):
-            return response
+        if all([err not in response for err in ['error', 'ERROR', 'False']]):
+            return response  # ?? this probably shouldn't be there, but removing it breaks the claimed type '-> str'
             if response.isdigit():
                 return int(response)
             else:
@@ -516,7 +502,7 @@ class Tello:
     def connect(self, wait_for_state=True):
         """Enter SDK mode. Call this before any of the control functions.
         """
-        self.send_control_command("command")  # enter SDK mode
+        self.send_control_command("command")
 
         if wait_for_state:
             for i in range(20):
