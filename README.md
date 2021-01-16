@@ -29,13 +29,10 @@ $ pip install -e .
 ```
 
 ## Usage
-
 ### API Reference
-
 See [djitellopy.readthedocs.io](https://djitellopy.readthedocs.io/en/latest/) for a full reference of all classes and methods available.
 
 ### Simple example
-
 ```python
 from djitellopy import Tello
 
@@ -64,7 +61,7 @@ In the [examples](examples/) directory there are some code examples:
 ### Notes
 - If you are using the ```streamon``` command and the response is ```Unknown command``` means you have to update the Tello firmware. That can be done through the Tello app.
 - Mission pad detection and navigation is only supported by the Tello EDU.
-- Bright environment is necessary for successful use of mission pads
+- Bright environment is necessary for successful use of mission pads.
 - Connecting to an existing wifi network is only supported by the Tello EDU.
 - When connected to an existing wifi network video streaming is not available.
 
@@ -77,4 +74,3 @@ In the [examples](examples/) directory there are some code examples:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
-

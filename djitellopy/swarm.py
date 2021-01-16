@@ -5,6 +5,7 @@ from typing import List, Callable
 from .tello import Tello
 from .enforce_types import enforce_types
 
+
 @enforce_types
 class TelloSwarm:
 	"""Swarm library for controlling multiple Tellos simultaneously
@@ -23,7 +24,7 @@ class TelloSwarm:
 		Arguments:
 			path: path to the file
 		"""
-		with open(path, "r") as fd:
+		with open(path, 'r') as fd:
 			ips = fd.readlines()
 
 		return TelloSwarm.fromIps(ips)
@@ -98,7 +99,7 @@ class TelloSwarm:
 
 		for queue in self.funcQueues:
 			queue.put(func)
-		
+
 		self.funcBarrier.wait()
 		self.funcBarrier.wait()
 
@@ -149,7 +150,7 @@ class TelloSwarm:
 		"""Return the amount of tellos in the swarm
 
 		```python
-		print("Tello count: ", len(swarm))
+		print('Tello count: ', len(swarm))
 		```
 		"""
 		return len(self.tellos)

@@ -1,13 +1,16 @@
+"""
+This file is based on a StackOverflow post by @301_Moved_Permanently.
+See https://stackoverflow.com/a/50622643
+
+The code was adapted to be able to wrap all methods of a class by simply
+adding the decorator to the class itself.
+"""
+
 import inspect
 import typing
 from contextlib import suppress
 from functools import wraps
 
-# this file is based on a StackOverflow post by @301_Moved_Permanently
-# see https://stackoverflow.com/a/50622643
-
-# the code was adapted to be able to wrap all methods of a class by simply
-# adding the decorator to the class itself
 
 def _is_unparameterized_special_typing(type_hint):
     # Check for typing.Any, typing.Union, typing.ClassVar (without parameters)
@@ -17,6 +20,7 @@ def _is_unparameterized_special_typing(type_hint):
         return type_hint.__origin__ is None
     else:
         return False
+
 
 def enforce_types(target):
     def check_types(spec, *args, **kwargs):

@@ -13,6 +13,7 @@ threads_initialized = False
 drones: Optional[dict] = {}
 client_socket: socket.socket
 
+
 @enforce_types
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
@@ -418,7 +419,7 @@ class Tello:
         # Commands very consecutive makes the drone not respond to them. So wait at least self.TIME_BTW_COMMANDS seconds
         diff = time.time() - self.last_received_command_timestamp
         if diff < self.TIME_BTW_COMMANDS:
-            self.LOGGER.debug('Waiting {} seconds to execute command {}...'.format(diff, command))
+            self.LOGGER.debug('Waiting {} seconds to execute command: {}...'.format(diff, command))
             time.sleep(diff)
 
         self.LOGGER.info('Send command: ' + command)
@@ -429,7 +430,7 @@ class Tello:
         responses = self.get_own_udp_object()['responses']
         while len(responses) == 0:
             if time.time() - timestamp > timeout:
-                self.LOGGER.warning('Timeout exceed on command ' + command)
+                self.LOGGER.warning('Timeout exceed on command: ' + command)
                 return "Timeout error!"
             else:
                 time.sleep(0.1)
@@ -459,10 +460,10 @@ class Tello:
         for i in range(0, self.retry_count):
             response = self.send_command_with_return(command, timeout=timeout)
 
-            if response == 'OK' or response == 'ok':
+            if response in ['ok', 'OK']:
                 return True
 
-            self.LOGGER.debug('Command attempt {} for {} failed'.format(i, command))
+            self.LOGGER.debug('Command attempt #{} for {} failed'.format(i, command))
 
         self.raise_result_error(command, response)
         return False # never reached
@@ -515,7 +516,7 @@ class Tello:
     def connect(self, wait_for_state=True):
         """Enter SDK mode. Call this before any of the control functions.
         """
-        self.send_control_command("command")
+        self.send_control_command("command")  # enter SDK mode
 
         if wait_for_state:
             for i in range(20):
@@ -574,7 +575,7 @@ class Tello:
             direction: up, down, left, right, forward or back
             x: 20-500
         """
-        self.send_control_command(direction + ' ' + str(x))
+        self.send_control_command("{} {}".format(direction, x))
 
     def move_up(self, x: int):
         """Fly x cm up.
