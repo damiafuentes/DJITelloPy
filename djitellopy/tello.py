@@ -32,7 +32,7 @@ class Tello:
 
     # Video stream, server socket
     VS_UDP_IP = '0.0.0.0'
-    VS_UDP_PORT = '11111'
+    VS_UDP_PORT = 11111
 
     CONTROL_UDP_PORT = 8889
     STATE_UDP_PORT = 8890
@@ -49,7 +49,7 @@ class Tello:
     # to only receive logs of the desired level and higher
 
     # Conversion functions for state protocol fields
-    INTS = [
+    INT_STATE_FIELDS = (
         # Tello EDU with mission pads enabled only
         'mid', 'x', 'y', 'z',
         # 'mpry': (custom format 'x,y,z')
@@ -58,11 +58,10 @@ class Tello:
         'vgx', 'vgy', 'vgz',
         'templ', 'temph',
         'tof', 'h', 'bat', 'time'
-    ]
-    state_field_converters = {key : int for key in INTS}
-
-    FLOATS = ['baro', 'agx', 'agy', 'agz']
-    state_field_converters.update({key : float for key in FLOATS})
+    )
+    FLOAT_STATE_FIELDS = ('baro', 'agx', 'agy', 'agz')
+    state_field_converters = {key : int for key in INT_STATE_FIELDS}
+    state_field_converters.update({key : float for key in FLOAT_STATE_FIELDS})
 
     # VideoCapture object
     cap: Optional[cv2.VideoCapture] = None
@@ -96,9 +95,9 @@ class Tello:
 
             threads_initialized = True
 
-        drones[host] = dict(responses=[], state={})
+        drones[host] = {'responses': [], 'state': {}}
 
-        self.LOGGER.info("Tello instance was initialized")
+        self.LOGGER.info("Tello instance was initialized. Host: '{}'. Port: '{}'.".format(host, Tello.CONTROL_UDP_PORT))
 
     def get_own_udp_object(self):
         global drones
@@ -115,7 +114,7 @@ class Tello:
         global client_socket
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        client_socket.bind((str(), Tello.CONTROL_UDP_PORT))
+        client_socket.bind(("", Tello.CONTROL_UDP_PORT))
 
         while True:
             try:
@@ -141,7 +140,7 @@ class Tello:
         Internal method, you normally wouldn't call this yourself.
         """
         state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        state_socket.bind((str(), Tello.STATE_UDP_PORT))
+        state_socket.bind(("", Tello.STATE_UDP_PORT))
 
         while True:
             try:
@@ -425,7 +424,7 @@ class Tello:
 
         while not responses:
             if time.time() - timestamp > timeout:
-                message = "Aborting command '{}'. Return after timeout of {}s".format(command, timeout)
+                message = "Aborting command '{}'. Did not receive a response after {} seconds".format(command, timeout)
                 self.LOGGER.warning(message)
                 return message
             self.sleep(0.1)  # Sleep during send command
@@ -434,10 +433,11 @@ class Tello:
 
         first_response = responses.pop(0)  # first datum from socket
         try:
-            response_decoded = first_response.decode('utf-8').rstrip("\r\n")
+            response_decoded = first_response.decode('utf-8')
         except UnicodeDecodeError as e:
-            print(e)
-            print(response_0)
+            pass
+            #print(e)
+            #print(response_0)
         response = response_decoded.rstrip("\r\n")
 
         self.LOGGER.info("Response {}: '{}'".format(command, response))
@@ -482,19 +482,11 @@ class Tello:
             self.LOGGER.error(e)
             pass
 
-        if all(word not in response for word in ('error', 'ERROR', 'False')):
-            return response
-            # ??? The above early exit line probably shouldn't be there, but removing it breaks the claimed type '-> str'
-            if response.isdigit():
-                return int(response)
-            else:
-                try:
-                    return float(response)  # isdigit() is False when the number is a float(barometer)
-                except ValueError:
-                    return response
-        else:
+        if any(word in response for word in ('error', 'ERROR', 'False')):
             self.raise_result_error(command, response)
             return "Error: this code should never be reached"
+
+        return response
 
     def send_read_command_int(self, command: str) -> int:
         """Send given command to Tello and wait for its response.
@@ -514,8 +506,7 @@ class Tello:
 
     def raise_result_error(self, command: str, response: str) -> bool:
         tries = 1 + self.retry_count
-        raise Exception("Command '{}' was unsuccessful for {} tries. Latest response:\n\t'{}'\n"
-            .format(command, tries, response))
+        raise Exception("Command '{}' was unsuccessful for {} tries. Latest response:\t'{}'".format(command, tries, response))
 
     def connect(self, wait_for_state=True):
         """Enter SDK mode. Call this before any of the control functions.
@@ -544,7 +535,7 @@ class Tello:
         """
         # Something it takes a looooot of time to take off and return a succesful takeoff.
         # So we better wait. Otherwise, it would give us an error on the following calls.
-        self.send_control_command("takeoff", timeout=self.TAKEOFF_TIMEOUT)
+        self.send_control_command("takeoff", timeout=Tello.TAKEOFF_TIMEOUT)
         self.is_flying = True
 
     def land(self):
@@ -788,18 +779,16 @@ class Tello:
             up_down_velocity: -100~100 (up/down)
             yaw_velocity: -100~100 (yaw)
         """
-        def round_to_max(x: int):
-            MAX = 100
-            return -MAX if x < -MAX else min(x, MAX)
+        def round_to_100(x: int):
+            return max(-100, min(100, x))
 
         if time.time() - self.last_rc_control_timestamp > self.TIME_BTW_RC_CONTROL_COMMANDS:
             self.last_rc_control_timestamp = time.time()
             SCHEMA = 'rc %s %s %s %s'
             self.send_command_without_return(SCHEMA % (round_to_100(left_right_velocity),
-                                                        round_to_100(forward_backward_velocity),
-                                                        round_to_100(up_down_velocity),
-                                                        round_to_100(yaw_velocity))
-                                                        )
+                round_to_100(forward_backward_velocity),
+                round_to_100(up_down_velocity),
+                round_to_100(yaw_velocity)))
 
     def set_wifi_credentials(self, ssid, password):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
