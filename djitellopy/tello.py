@@ -113,7 +113,6 @@ class Tello:
         Must be run from a background thread in order to not block the main thread.
         Internal method, you normally wouldn't call this yourself.
         """
-      
         while True:
             try:
                 data, address = client_socket.recvfrom(1024)
@@ -669,8 +668,8 @@ class Tello:
             z: 20-500
             speed: 10-100
         """
-        SCHEMA = 'go %s %s %s %s'
-        self.send_control_command(SCHEMA % (x, y, z, speed))
+        cmd = 'go {} {} {} {}'.format(x, y, z, speed)
+        self.send_control_command(cmd)
 
     def curve_xyz_speed(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int):
         """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
@@ -689,8 +688,8 @@ class Tello:
             z2: -500-500
             speed: 10-60
         """
-        SCHEMA = 'curve %s %s %s %s %s %s %s'
-        self.send_control_command(SCHEMA % (x1, y1, z1, x2, y2, z2, speed))
+        cmd = 'curve {} {} {} {} {} {} {}'.format(x1, y1, z1, x2, y2, z2, speed)
+        self.send_control_command(cmd)
 
     def go_xyz_speed_mid(self, x: int, y: int, z: int, speed: int, mid: int):
         """Fly to x y z relative to the mission pad with id mid.
@@ -702,8 +701,8 @@ class Tello:
             speed: 10-100
             mid: 1-8
         """
-        SCHEMA = 'go %s %s %s %s m%s'
-        self.send_control_command(SCHEMA % (x, y, z, speed, mid))
+        cmd = 'go {} {} {} {} m{}'.format(x, y, z, speed, mid)
+        self.send_control_command(cmd)
 
     def curve_xyz_speed_mid(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int, mid: int):
         """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
@@ -723,8 +722,8 @@ class Tello:
             speed: 10-60
             mid: 1-8
         """
-        SCHEMA = 'curve %s %s %s %s %s %s %s m%s'
-        self.send_control_command(SCHEMA % (x1, y1, z1, x2, y2, z2, speed, mid))
+        cmd = 'curve {} {} {} {} {} {} {} m{}'.format(x1, y1, z1, x2, y2, z2, speed, mid)
+        self.send_control_command(cmd)
 
     def go_xyz_speed_yaw_mid(self, x: int, y: int, z: int, speed: int, yaw: int, mid1: int, mid2: int):
         """Fly to x y z relative to mid1.
@@ -739,8 +738,8 @@ class Tello:
             mid1: 1-8
             mid2: 1-8
         """
-        SCHEMA = 'jump %s %s %s %s %s m%s m%s'
-        self.send_control_command(SCHEMA % (x, y, z, speed, yaw, mid1, mid2))
+        cmd = 'jump {} {} {} {} {} m{} m{}'.format(x, y, z, speed, yaw, mid1, mid2)
+        self.send_control_command(cmd)
 
     def enable_mission_pads(self):
         """Enable mission pad detection
@@ -777,30 +776,32 @@ class Tello:
             up_down_velocity: -100~100 (up/down)
             yaw_velocity: -100~100 (yaw)
         """
-        def round_to_100(x: int):
+        def clamp100(x: int): int:
             return max(-100, min(100, x))
 
         if time.time() - self.last_rc_control_timestamp > self.TIME_BTW_RC_CONTROL_COMMANDS:
             self.last_rc_control_timestamp = time.time()
-            SCHEMA = 'rc %s %s %s %s'
-            self.send_command_without_return(SCHEMA % (round_to_100(left_right_velocity),
-                round_to_100(forward_backward_velocity),
-                round_to_100(up_down_velocity),
-                round_to_100(yaw_velocity)))
+            cmd = 'rc {} {} {} {}'.format(
+                clamp100(left_right_velocity),
+                clamp100(forward_backward_velocity),
+                clamp100(up_down_velocity),
+                clamp100(yaw_velocity)
+            )
+            self.send_command_without_return(cmd)
 
     def set_wifi_credentials(self, ssid, password):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
         """
-        SCHEMA = 'wifi %s %s'
-        self.send_command_without_return(SCHEMA % (ssid, password))
+        cmd = 'wifi {} {}'.format(ssid, password)
+        self.send_command_without_return(cmd)
 
     def connect_to_wifi(self, ssid, password):
         """Connects to the Wi-Fi with SSID and password.
         After this command the tello will reboot.
         Only works with Tello EDUs.
         """
-        SCHEMA = 'ap %s %s'
-        self.send_command_without_return(SCHEMA % (ssid, password))
+        cmd = 'ap {} {}'.format(ssid, password)
+        self.send_command_without_return(cmd)
 
     def query_speed(self) -> int:
         """Query speed setting (cm/s)
