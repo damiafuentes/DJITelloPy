@@ -113,10 +113,6 @@ class Tello:
         Must be run from a background thread in order to not block the main thread.
         Internal method, you normally wouldn't call this yourself.
         """
-        global client_socket
-
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        client_socket.bind(("", Tello.CONTROL_UDP_PORT))
       
         while True:
             try:
