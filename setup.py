@@ -18,7 +18,7 @@ setuptools.setup(
     author='Jakob Löw',
     author_email='djitellopy2@m4gnus.de',
     url='https://github.com/M4GNV5',
-    download_url='https://github.com/damiafuentes/TelloSDKPy/archive/v_2.1.tar.gz',
+    download_url='https://github.com/damiafuentes/DJITelloPy/archive/2.1.tar.gz',
     keywords=['tello', 'dji', 'drone', 'sdk', 'official sdk'],
     install_requires=[
         'numpy',
