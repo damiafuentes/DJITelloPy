@@ -9,7 +9,7 @@ long_description = long_description.replace("](examples/", "]({}/examples/".form
 
 setuptools.setup(
     name='djitellopy2',
-    packages=['djitellopy2'],
+    packages=['djitellopy'],
     version='2.1',
     license='MIT',
     description='Tello drone library including support for video streaming, swarms, state packets and more',
