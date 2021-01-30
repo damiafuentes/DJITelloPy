@@ -433,15 +433,13 @@ class Tello:
 
         first_response = responses.pop(0)  # first datum from socket
         try:
-            response_decoded = first_response.decode('utf-8')
+            response = first_response.decode("utf-8")
         except UnicodeDecodeError as e:
-            pass
-            #print(e)
-            #print(response_0)
-        response = response_decoded.rstrip("\r\n")
+            self.LOGGER.error(e)
+            return "response decode error"
+        response = response.rstrip("\r\n")
 
         self.LOGGER.info("Response {}: '{}'".format(command, response))
-
         return response
 
     def send_command_without_return(self, command: str):
