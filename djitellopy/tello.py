@@ -1,12 +1,14 @@
+"""Library for interacting with DJI Ryze Tello drones.
+"""
+
 # coding=utf-8
 import logging
 import socket
 import time
-import threading
-import cv2 # type: ignore
 from threading import Thread
 from typing import Optional, Union, Type, Dict
 
+import cv2 # type: ignore
 from .enforce_types import enforce_types
 
 
@@ -88,12 +90,12 @@ class Tello:
             # Run Tello command responses UDP receiver on background
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             client_socket.bind(('', Tello.CONTROL_UDP_PORT))
-            response_receiver_thread = threading.Thread(target=Tello.udp_response_receiver)
+            response_receiver_thread = Thread(target=Tello.udp_response_receiver)
             response_receiver_thread.daemon = True
             response_receiver_thread.start()
 
             # Run state UDP receiver on background
-            state_receiver_thread = threading.Thread(target=Tello.udp_state_receiver)
+            state_receiver_thread = Thread(target=Tello.udp_state_receiver)
             state_receiver_thread.daemon = True
             state_receiver_thread.start()
 
@@ -104,6 +106,10 @@ class Tello:
         self.LOGGER.info("Tello instance was initialized. Host: '{}'. Port: '{}'.".format(host, Tello.CONTROL_UDP_PORT))
 
     def get_own_udp_object(self):
+        """Get own object from the global drones dict. This object is filled
+        with responses and state information by the receiver threads.
+        Internal method, you normally wouldn't call this yourself.
+        """
         global drones
 
         host = self.address[0]
@@ -399,9 +405,6 @@ class Tello:
             self.background_frame_read.start()
         return self.background_frame_read
 
-    def stop_video_capture(self):
-        return self.streamoff()
-
     def send_command_with_return(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> str:
         """Send command to Tello and wait for its response.
         Internal method, you normally wouldn't call this yourself.
@@ -478,7 +481,6 @@ class Tello:
             response = str(response)
         except TypeError as e:
             self.LOGGER.error(e)
-            pass
 
         if any(word in response for word in ('error', 'ERROR', 'False')):
             self.raise_result_error(command, response)
@@ -503,8 +505,12 @@ class Tello:
         return float(response)
 
     def raise_result_error(self, command: str, response: str) -> bool:
+        """Used to reaise an error after an unsuccessful command
+        Internal method, you normally wouldn't call this yourself.
+        """
         tries = 1 + self.retry_count
-        raise Exception("Command '{}' was unsuccessful for {} tries. Latest response:\t'{}'".format(command, tries, response))
+        raise Exception("Command '{}' was unsuccessful for {} tries. Latest response:\t'{}'"
+                        .format(command, tries, response))
 
     def connect(self, wait_for_state=True):
         """Enter SDK mode. Call this before any of the control functions.
@@ -929,9 +935,15 @@ class BackgroundFrameRead:
         self.worker = Thread(target=self.update_frame, args=(), daemon=True)
 
     def start(self):
+        """Start the frame update worker
+        Internal method, you normally wouldn't call this yourself.
+        """
         self.worker.start()
 
     def update_frame(self):
+        """Thread worker function to retrieve frames from a VideoCapture
+        Internal method, you normally wouldn't call this yourself.
+        """
         while not self.stopped:
             if not self.grabbed or not self.cap.isOpened():
                 self.stop()
@@ -939,5 +951,8 @@ class BackgroundFrameRead:
                 self.grabbed, self.frame = self.cap.read()
 
     def stop(self):
+        """Stop the frame update worker
+        Internal method, you normally wouldn't call this yourself.
+        """
         self.stopped = True
         self.worker.join()

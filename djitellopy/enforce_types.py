@@ -23,6 +23,8 @@ def _is_unparameterized_special_typing(type_hint):
 
 
 def enforce_types(target):
+    """Class decorator adding type checks to all member functions
+    """
     def check_types(spec, *args, **kwargs):
         parameters = dict(zip(spec.args, args))
         parameters.update(kwargs)
@@ -38,7 +40,8 @@ def enforce_types(target):
                     actual_type = type_hint
 
                 if not isinstance(value, actual_type):
-                    raise TypeError('Unexpected type for \'{}\' (expected {} but found {})'.format(name, type_hint, type(value)))
+                    raise TypeError("Unexpected type for '{}' (expected {} but found {})"
+                                    .format(name, type_hint, type(value)))
 
     def decorate(func):
         spec = inspect.getfullargspec(func)
