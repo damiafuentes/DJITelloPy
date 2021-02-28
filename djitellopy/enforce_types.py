@@ -34,7 +34,9 @@ def enforce_types(target):
                 if _is_unparameterized_special_typing(type_hint):
                     continue
 
-                if hasattr(type_hint, "__args__") and type_hint.__args__ is not None:
+                if hasattr(type_hint, "__origin__") and type_hint.__origin__ is not None:
+                    actual_type = type_hint.__origin__
+                elif hasattr(type_hint, "__args__") and type_hint.__args__ is not None:
                     actual_type = type_hint.__args__
                 else:
                     actual_type = type_hint
