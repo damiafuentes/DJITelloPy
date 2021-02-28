@@ -10,14 +10,14 @@ long_description = long_description.replace("](examples/", "]({}/examples/".form
 setuptools.setup(
     name='djitellopy2',
     packages=['djitellopy'],
-    version='2.2',
+    version='2.3',
     license='MIT',
     description='Tello drone library including support for video streaming, swarms, state packets and more',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Jakob Löw',
     author_email='djitellopy2@m4gnus.de',
-    url='https://github.com/M4GNV5',
+    url='https://github.com/damiafuentes/DJITelloPy',
     download_url='https://github.com/damiafuentes/DJITelloPy/archive/2.1.tar.gz',
     keywords=['tello', 'dji', 'drone', 'sdk', 'official sdk'],
     install_requires=[
