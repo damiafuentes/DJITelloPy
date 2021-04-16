@@ -74,6 +74,19 @@ class Tello:
     stream_on = False
     is_flying = False
 
+    # Optional callback function called when state data is received
+    # May be set to a function taking arguments drone_address and state
+    # NB this belongs to the class itself, not the instance
+    #
+    # Example:
+    #    def my_handler_function(drone_address, state):
+    #        print(f'state received from {drone_address}')
+    #        for k,v in state.items():
+    #            print(f'  {k}: {v}')
+    #    Tello.on_state_received = my_handler_function
+    #
+    on_state_received = None
+
     def __init__(self,
                  host=TELLO_IP,
                  retry_count=RETRY_COUNT):
@@ -158,7 +171,12 @@ class Tello:
                     continue
 
                 data = data.decode('ASCII')
-                drones[address]['state'] = Tello.parse_state(data)
+                state = Tello.parse_state(data)
+                drones[address]['state'] = state
+
+                # call callback if set
+                if Tello.on_state_received:
+                    Tello.on_state_received(address, state)
 
             except Exception as e:
                 Tello.LOGGER.error(e)
