@@ -27,6 +27,7 @@ class Tello:
     # Send and receive commands, client socket
     RESPONSE_TIMEOUT = 7  # in seconds
     TAKEOFF_TIMEOUT = 20  # in seconds
+    FRAME_GRAB_TIMEOUT = 3
     TIME_BTW_COMMANDS = 0.1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
     RETRY_COUNT = 3  # number of retries after a failed command
@@ -930,7 +931,9 @@ class BackgroundFrameRead:
         # Try grabbing a frame multiple times
         # According to issue #90 the decoder might need some time
         # https://github.com/damiafuentes/DJITelloPy/issues/90#issuecomment-855458905
-        for _ in range(20):
+        start = time.time()
+        while time.time() - start < Tello.FRAME_GRAB_TIMEOUT:
+            Tello.LOGGER.debug('trying to grab a frame...')
             self.grabbed, self.frame = self.cap.read()
             if self.frame is not None:
                 break
