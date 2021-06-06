@@ -11,21 +11,21 @@ Feel free to contribute!
 
 ## Install using pip
 ```
-$ pip install djitellopy2
+pip install djitellopy
 ```
 
 For Linux distributions with both python2 and python3 (e.g. Debian, Ubuntu, ...) you need to run
 ```
-$ pip3 install djitellopy2
+pip3 install djitellopy
 ```
 
 ## Install in developer mode
 Using the commands below you can install the repository in an _editable_ way. This allows you to modify the library and use the modified version as if you had installed it regularly.
 
 ```
-$ git clone https://github.com/damiafuentes/DJITelloPy.git
-$ cd DJITelloPy
-$ pip install -e .
+git clone https://github.com/damiafuentes/DJITelloPy.git
+cd DJITelloPy
+pip install -e .
 ```
 
 ## Usage
