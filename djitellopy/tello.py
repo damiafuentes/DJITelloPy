@@ -665,9 +665,9 @@ class Tello:
         """Fly to x y z relative to the current position.
         Speed defines the traveling speed in cm/s.
         Arguments:
-            x: 20-500
-            y: 20-500
-            z: 20-500
+            x: -500-500
+            y: -500-500
+            z: -500-500
             speed: 10-100
         """
         cmd = 'go {} {} {} {}'.format(x, y, z, speed)
