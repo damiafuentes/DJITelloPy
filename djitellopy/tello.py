@@ -927,7 +927,15 @@ class BackgroundFrameRead:
         if not self.cap.isOpened():
             self.cap.open(address)
 
-        self.grabbed, self.frame = self.cap.read()
+        # Try grabbing a frame multiple times
+        # According to issue #90 the decoder might need some time
+        # https://github.com/damiafuentes/DJITelloPy/issues/90#issuecomment-855458905
+        for _ in range(20):
+            self.grabbed, self.frame = self.cap.read()
+            if self.frame is not None:
+                break
+            time.sleep(0.05)
+
         if not self.grabbed or self.frame is None:
             raise Exception('Failed to grab first frame from video stream')
 
