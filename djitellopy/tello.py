@@ -40,6 +40,19 @@ class Tello:
     CONTROL_UDP_PORT = 8889
     STATE_UDP_PORT = 8890
 
+    # Constants for video settings
+    BITRATE_AUTO = 0
+    BITRATE_1MBPS = 1
+    BITRATE_2MBPS = 2
+    BITRATE_3MBPS = 3
+    BITRATE_4MBPS = 4
+    BITRATE_5MBPS = 5
+    RESOLUTION_480P = 'low'
+    RESOLUTION_720P = 'high'
+    FPS_5 = 'low'
+    FPS_15 = 'middle'
+    FPS_30 = 'high'
+
     # Set up logger
     HANDLER = logging.StreamHandler()
     FORMATTER = logging.Formatter('[%(levelname)s] %(filename)s - %(lineno)d - %(message)s')
@@ -463,7 +476,7 @@ class Tello:
         for i in range(0, self.retry_count):
             response = self.send_command_with_return(command, timeout=timeout)
 
-            if response.lower() == 'ok':
+            if 'ok' in response.lower():
                 return True
 
             self.LOGGER.debug("Command attempt #{} failed for command: '{}'".format(i, command))
@@ -529,6 +542,21 @@ class Tello:
 
             if not self.get_current_state():
                 raise Exception('Did not receive a state packet from the Tello')
+
+    def turn_motor_on(self):
+        """Turn on motors without flying (mainly for cooling)
+        """
+        self.send_control_command("motoron")
+
+    def turn_motor_off(self):
+        """Turns off the motor cooling mode
+        """
+        self.send_control_command("motoroff")
+
+    def initiate_throw_takeoff(self):
+        """Allows you to take off by throwing your drone within 5 seconds of this command
+        """
+        self.send_control_command("throwfly")
 
     def takeoff(self):
         """Automatic takeoff.
@@ -792,19 +820,71 @@ class Tello:
             )
             self.send_command_without_return(cmd)
 
-    def set_wifi_credentials(self, ssid, password):
+    def set_wifi_credentials(self, ssid: str, password: str):
         """Set the Wi-Fi SSID and password. The Tello will reboot afterwords.
         """
         cmd = 'wifi {} {}'.format(ssid, password)
-        self.send_command_without_return(cmd)
+        self.send_control_command(cmd)
 
-    def connect_to_wifi(self, ssid, password):
+    def connect_to_wifi(self, ssid: str, password: str):
         """Connects to the Wi-Fi with SSID and password.
         After this command the tello will reboot.
         Only works with Tello EDUs.
         """
         cmd = 'ap {} {}'.format(ssid, password)
-        self.send_command_without_return(cmd)
+        self.send_control_command(cmd)
+
+    def set_network_ports(self, state_packet_port: int, video_stream_port: int):
+        """Sets the ports for state packets and video streaming
+        While you can use this command to reconfigure the Tello this library currently does not support
+        non-default ports (TODO!)
+        """
+        cmd = 'port {} {}'.format(state_packet_port, video_stream_port)
+        self.send_control_command(cmd)
+
+    def reboot(self):
+        """Reboots the drone
+        """
+        self.send_command_without_return('reboot')
+
+    def set_video_bitrate(self, bitrate: int):
+        """Sets the bitrate of the video stream
+        Use one of the following for the bitrate argument:
+            Tello.BITRATE_AUTO
+            Tello.BITRATE_1MBPS
+            Tello.BITRATE_2MBPS
+            Tello.BITRATE_3MBPS
+            Tello.BITRATE_4MBPS
+            Tello.BITRATE_5MBPS
+        """
+        cmd = 'setbitrate {}'.format(bitrate)
+        self.send_control_command(cmd)
+
+    def set_video_resolution(self, resolution: str):
+        """Sets the resolution of the video stream
+        Use one of the following for the resolution argument:
+            Tello.RESOLUTION_480P
+            Tello.RESOLUTION_720P
+        """
+        cmd = 'setresolution {}'.format(resolution)
+        self.send_control_command(cmd)
+
+    def set_video_fps(self, fps: str):
+        """Sets the frames per second of the video stream
+        Use one of the following for the fps argument:
+            Tello.FPS_5
+            Tello.FPS_15
+            Tello.FPS_30
+        """
+        cmd = 'setfps {}'.format(fps)
+        self.send_control_command(cmd)
+
+    def send_expansion_command(self, expansion_cmd: str):
+        """Sends a command to the ESP32 expansion board connected to a Tello Talent
+        Use e.g. tello.send_expansion_command("led 255 0 0") to turn the top led red.
+        """
+        cmd = 'EXT {}'.format(expansion_cmd)
+        self.send_control_command(cmd)
 
     def query_speed(self) -> int:
         """Query speed setting (cm/s)
