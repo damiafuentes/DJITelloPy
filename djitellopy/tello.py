@@ -52,6 +52,8 @@ class Tello:
     FPS_5 = 'low'
     FPS_15 = 'middle'
     FPS_30 = 'high'
+    CAMERA_FORWARD = 0
+    CAMERA_DOWNWARD = 1
 
     # Set up logger
     HANDLER = logging.StreamHandler()
@@ -543,6 +545,11 @@ class Tello:
             if not self.get_current_state():
                 raise Exception('Did not receive a state packet from the Tello')
 
+    def send_keepalive(self):
+        """Send a keepalive packet to prevent the drone from landing after 15s
+        """
+        self.send_control_command("keepalive")
+
     def turn_motor_on(self):
         """Turn on motors without flying (mainly for cooling)
         """
@@ -879,6 +886,17 @@ class Tello:
         cmd = 'setfps {}'.format(fps)
         self.send_control_command(cmd)
 
+    def set_video_direction(self, direction: int):
+        """Selects one of the two cameras for video streaming
+        The forward camera is the regular 1080x720 color camera
+        The downward camera is a grey-only 320x240 IR-sensitive camera
+        Use one of the following for the direction argument:
+            Tello.CAMERA_FORWARD
+            Tello.CAMERA_DOWNWARD
+        """
+        cmd = 'downvision {}'.format(direction)
+        self.send_control_command(cmd)
+
     def send_expansion_command(self, expansion_cmd: str):
         """Sends a command to the ESP32 expansion board connected to a Tello Talent
         Use e.g. tello.send_expansion_command("led 255 0 0") to turn the top led red.
@@ -973,6 +991,13 @@ class Tello:
             str: Serial Number
         """
         return self.send_read_command('sn?')
+
+    def query_active(self) -> str:
+        """Get the active status
+        Returns:
+            str
+        """
+        return self.send_read_command('active?')
 
     def end(self):
         """Call this method when you want to end the tello object
