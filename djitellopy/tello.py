@@ -11,6 +11,9 @@ from typing import Optional, Union, Type, Dict
 import cv2 # type: ignore
 from .enforce_types import enforce_types
 
+import av
+import numpy as np
+
 
 threads_initialized = False
 drones: Optional[dict] = {}
@@ -390,7 +393,7 @@ class Tello:
     def get_udp_video_address(self) -> str:
         """Internal method, you normally wouldn't call this youself.
         """
-        address_schema = 'udp://@{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
+        address_schema = 'udp://{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
         address = address_schema.format(ip=self.VS_UDP_IP, port=self.VS_UDP_PORT)
         return address
 
@@ -1029,6 +1032,7 @@ class BackgroundFrameRead:
         tello.cap = cv2.VideoCapture(address)
 
         self.cap = tello.cap
+        self.address = address
 
         if not self.cap.isOpened():
             self.cap.open(address)
@@ -1047,6 +1051,7 @@ class BackgroundFrameRead:
         if not self.grabbed or self.frame is None:
             raise Exception('Failed to grab first frame from video stream')
 
+        self.cap.release()
         self.stopped = False
         self.worker = Thread(target=self.update_frame, args=(), daemon=True)
 
@@ -1057,14 +1062,22 @@ class BackgroundFrameRead:
         self.worker.start()
 
     def update_frame(self):
-        """Thread worker function to retrieve frames from a VideoCapture
+        """Thread worker function to retrieve frames using PyAV
         Internal method, you normally wouldn't call this yourself.
         """
+        container = av.open(self.address + '?timeout=1000000')
+
         while not self.stopped:
-            if not self.grabbed or not self.cap.isOpened():
-                self.stop()
-            else:
-                self.grabbed, self.frame = self.cap.read()
+            try:
+                for frame in container.decode(video=0):
+                    self.frame = cv2.cvtColor(np.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+                    if self.stopped:
+                        break
+            except av.error.OSError:
+                pass
+            time.sleep(0.1)
+
+        container.close()
 
     def stop(self):
         """Stop the frame update worker
