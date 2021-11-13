@@ -11,6 +11,9 @@ from typing import Optional, Union, Type, Dict
 import cv2 # type: ignore
 from .enforce_types import enforce_types
 
+import av
+import numpy as np
+
 
 threads_initialized = False
 drones: Optional[dict] = {}
@@ -390,7 +393,7 @@ class Tello:
     def get_udp_video_address(self) -> str:
         """Internal method, you normally wouldn't call this youself.
         """
-        address_schema = 'udp://@{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
+        address_schema = 'udp://{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
         address = address_schema.format(ip=self.VS_UDP_IP, port=self.VS_UDP_PORT)
         return address
 
@@ -1026,27 +1029,18 @@ class BackgroundFrameRead:
     """
 
     def __init__(self, tello, address):
-        tello.cap = cv2.VideoCapture(address)
+        self.address = address
+        self.frame = np.zeros([100, 100, 3], dtype=np.uint8)
 
-        self.cap = tello.cap
-
-        if not self.cap.isOpened():
-            self.cap.open(address)
-
-        # Try grabbing a frame multiple times
+        # Try grabbing frame with PyAV
         # According to issue #90 the decoder might need some time
         # https://github.com/damiafuentes/DJITelloPy/issues/90#issuecomment-855458905
-        start = time.time()
-        while time.time() - start < Tello.FRAME_GRAB_TIMEOUT:
-            Tello.LOGGER.debug('trying to grab a frame...')
-            self.grabbed, self.frame = self.cap.read()
-            if self.frame is not None:
-                break
-            time.sleep(0.05)
-
-        if not self.grabbed or self.frame is None:
-            raise Exception('Failed to grab first frame from video stream')
-
+        try:
+            Tello.LOGGER.debug('trying to grab video frame...')
+            self.container = av.open(self.address + '?timeout=1000000', timeout=Tello.FRAME_GRAB_TIMEOUT)
+        except av.error.ExitError:
+            raise Exception('Failed to grab video frame from video stream')
+        
         self.stopped = False
         self.worker = Thread(target=self.update_frame, args=(), daemon=True)
 
@@ -1057,14 +1051,28 @@ class BackgroundFrameRead:
         self.worker.start()
 
     def update_frame(self):
-        """Thread worker function to retrieve frames from a VideoCapture
+        """Thread worker function to retrieve frames using PyAV
         Internal method, you normally wouldn't call this yourself.
         """
         while not self.stopped:
-            if not self.grabbed or not self.cap.isOpened():
-                self.stop()
-            else:
-                self.grabbed, self.frame = self.cap.read()
+            
+            try:
+                for frame in self.container.decode(video=0):
+                    self.frame = cv2.cvtColor(np.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+                    if self.stopped:
+                        break
+                    
+            # Frame timeout error
+            except av.error.OSError:
+                pass
+
+            # No frame error
+            except av.error.ExitError:
+                raise Exception('Failed to grab enough frame for decoding due to low fps, please set video fps after get_frame_read()')
+            
+            time.sleep(0.1)
+
+        self.container.close()
 
     def stop(self):
         """Stop the frame update worker
