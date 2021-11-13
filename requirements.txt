@@ -1,3 +1,3 @@
 numpy==1.20.1
-opencv-python==4.5.1.48
+opencv-python==4.2.0.32
 av==8.0.3
