@@ -8,7 +8,6 @@ import time
 from threading import Thread
 from typing import Optional, Union, Type, Dict
 
-import cv2 # type: ignore
 from .enforce_types import enforce_types
 
 import av
@@ -87,7 +86,6 @@ class Tello:
     state_field_converters.update({key : float for key in FLOAT_STATE_FIELDS})
 
     # VideoCapture object
-    cap: Optional[cv2.VideoCapture] = None
     background_frame_read: Optional['BackgroundFrameRead'] = None
 
     stream_on = False
@@ -397,21 +395,6 @@ class Tello:
         address = address_schema.format(ip=self.VS_UDP_IP, port=self.VS_UDP_PORT)
         return address
 
-    def get_video_capture(self):
-        """Get the VideoCapture object from the camera drone.
-        Users usually want to use get_frame_read instead.
-        Returns:
-            VideoCapture
-        """
-
-        if self.cap is None:
-            self.cap = cv2.VideoCapture(self.get_udp_video_address())
-
-        if not self.cap.isOpened():
-            self.cap.open(self.get_udp_video_address())
-
-        return self.cap
-
     def get_frame_read(self) -> 'BackgroundFrameRead':
         """Get the BackgroundFrameRead object from the camera drone. Then, you just need to call
         backgroundFrameRead.frame to get the actual frame received by the drone.
@@ -420,7 +403,7 @@ class Tello:
         """
         if self.background_frame_read is None:
             address = self.get_udp_video_address()
-            self.background_frame_read = BackgroundFrameRead(self, address)  # also sets self.cap
+            self.background_frame_read = BackgroundFrameRead(self, address)
             self.background_frame_read.start()
         return self.background_frame_read
 
@@ -1011,8 +994,6 @@ class Tello:
             self.streamoff()
         if self.background_frame_read is not None:
             self.background_frame_read.stop()
-        if self.cap is not None:
-            self.cap.release()
 
         host = self.address[0]
         if host in drones:
@@ -1058,7 +1039,7 @@ class BackgroundFrameRead:
             
             try:
                 for frame in self.container.decode(video=0):
-                    self.frame = cv2.cvtColor(np.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+                    self.frame = np.array(frame.to_image())
                     if self.stopped:
                         break
                     
