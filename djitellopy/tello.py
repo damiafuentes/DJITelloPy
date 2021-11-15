@@ -1034,26 +1034,23 @@ class BackgroundFrameRead:
     def update_frame(self):
         """Thread worker function to retrieve frames using PyAV
         Internal method, you normally wouldn't call this yourself.
-        """
-        while not self.stopped:
-            
-            try:
-                for frame in self.container.decode(video=0):
-                    self.frame = np.array(frame.to_image())
-                    if self.stopped:
-                        break
-                    
-            # Frame timeout error
-            except av.error.OSError:
-                pass
+        """            
+        try:
+            for frame in self.container.decode(video=0):
+                self.frame = np.array(frame.to_image())
+                if self.stopped:
+                    self.container.close()
+                    break
+                
+        # Frame timeout error
+        except av.error.OSError:
+            self.container.close()
+            raise Exception('Frame grabber timeout error.')
 
-            # No frame error
-            except av.error.ExitError:
-                raise Exception('Failed to grab enough frame for decoding due to low fps, please set video fps after get_frame_read()')
-            
-            time.sleep(0.1)
-
-        self.container.close()
+        # No frame error
+        except av.error.ExitError:
+            self.container.close()
+            raise Exception('Failed to grab enough frame for decoding due to low fps, please set video fps after get_frame_read()')
 
     def stop(self):
         """Stop the frame update worker
