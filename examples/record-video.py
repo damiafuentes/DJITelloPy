@@ -10,6 +10,12 @@ keepRecording = True
 tello.streamon()
 frame_read = tello.get_frame_read()
 
+# Wait for video frames before doing other things
+while True:
+    if frame_read.frame is not None:
+        break
+    time.sleep(1)
+
 def videoRecorder():
     # create a VideoWrite object, recoring to ./video.avi
     height, width, _ = frame_read.frame.shape
