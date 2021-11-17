@@ -29,7 +29,7 @@ class Tello:
     # Send and receive commands, client socket
     RESPONSE_TIMEOUT = 7  # in seconds
     TAKEOFF_TIMEOUT = 20  # in seconds
-    FRAME_GRAB_TIMEOUT = 3
+    FRAME_GRAB_TIMEOUT = 5
     TIME_BTW_COMMANDS = 0.1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
     RETRY_COUNT = 3  # number of retries after a failed command
@@ -1005,22 +1005,22 @@ class Tello:
 
 class BackgroundFrameRead:
     """
-    This class read frames from a VideoCapture in background. Use
+    This class read frames using PyAV in background. Use
     backgroundFrameRead.frame to get the current frame.
     """
 
     def __init__(self, tello, address):
         self.address = address
-        self.frame = np.zeros([100, 100, 3], dtype=np.uint8)
+        self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
 
         # Try grabbing frame with PyAV
         # According to issue #90 the decoder might need some time
         # https://github.com/damiafuentes/DJITelloPy/issues/90#issuecomment-855458905
         try:
-            Tello.LOGGER.debug('trying to grab video frame...')
-            self.container = av.open(self.address + '?timeout=1000000', timeout=Tello.FRAME_GRAB_TIMEOUT)
+            Tello.LOGGER.debug('trying to grab video frames...')
+            self.container = av.open(self.address, timeout=(Tello.FRAME_GRAB_TIMEOUT, None))
         except av.error.ExitError:
-            raise Exception('Failed to grab video frame from video stream')
+            raise Exception('Failed to grab video frames from video stream')
         
         self.stopped = False
         self.worker = Thread(target=self.update_frame, args=(), daemon=True)
@@ -1034,27 +1034,18 @@ class BackgroundFrameRead:
     def update_frame(self):
         """Thread worker function to retrieve frames using PyAV
         Internal method, you normally wouldn't call this yourself.
-        """            
+        """
         try:
             for frame in self.container.decode(video=0):
                 self.frame = np.array(frame.to_image())
                 if self.stopped:
                     self.container.close()
                     break
-                
-        # Frame timeout error
-        except av.error.OSError:
-            self.container.close()
-            raise Exception('Frame grabber timeout error.')
-
-        # No frame error
         except av.error.ExitError:
-            self.container.close()
-            raise Exception('Failed to grab enough frame for decoding due to low fps, please set video fps after get_frame_read()')
-
+            raise Exception('Do not have enough frames for decoding, please try again or increase video fps before get_frame_read()')
+                
     def stop(self):
         """Stop the frame update worker
         Internal method, you normally wouldn't call this yourself.
         """
         self.stopped = True
-        self.worker.join()
