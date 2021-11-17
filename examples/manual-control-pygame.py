@@ -56,12 +56,6 @@ class FrontEnd(object):
 
         frame_read = self.tello.get_frame_read()
 
-        # Wait for video frames before doing other things
-        while True:
-            if frame_read.frame is not None:
-                break
-            time.sleep(1)
-
         should_stop = False
         while not should_stop:
 

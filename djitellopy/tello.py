@@ -29,7 +29,7 @@ class Tello:
     # Send and receive commands, client socket
     RESPONSE_TIMEOUT = 7  # in seconds
     TAKEOFF_TIMEOUT = 20  # in seconds
-    FRAME_GRAB_TIMEOUT = 3
+    FRAME_GRAB_TIMEOUT = 5
     TIME_BTW_COMMANDS = 0.1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
     RETRY_COUNT = 3  # number of retries after a failed command
@@ -1011,8 +1011,17 @@ class BackgroundFrameRead:
 
     def __init__(self, tello, address):
         self.address = address
-        self.frame = None
+        self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
 
+        # Try grabbing frame with PyAV
+        # According to issue #90 the decoder might need some time
+        # https://github.com/damiafuentes/DJITelloPy/issues/90#issuecomment-855458905
+        try:
+            Tello.LOGGER.debug('trying to grab video frames...')
+            self.container = av.open(self.address, timeout=(Tello.FRAME_GRAB_TIMEOUT, None))
+        except av.error.ExitError:
+            raise Exception('Failed to grab video frames from video stream')
+        
         self.stopped = False
         self.worker = Thread(target=self.update_frame, args=(), daemon=True)
 
@@ -1026,16 +1035,15 @@ class BackgroundFrameRead:
         """Thread worker function to retrieve frames using PyAV
         Internal method, you normally wouldn't call this yourself.
         """
-        Tello.LOGGER.debug('trying to grab video frames...')
-        self.container = av.open(self.address)
-
-        Tello.LOGGER.debug('video frames received, decoding...')
-        for frame in self.container.decode(video=0):
-            self.frame = np.array(frame.to_image())
-            if self.stopped:
-                self.container.close()
-                break
-            
+        try:
+            for frame in self.container.decode(video=0):
+                self.frame = np.array(frame.to_image())
+                if self.stopped:
+                    self.container.close()
+                    break
+        except av.error.ExitError:
+            raise Exception('Do not have enough frames for decoding, please try again or increase video fps before get_frame_read()')
+                
     def stop(self):
         """Stop the frame update worker
         Internal method, you normally wouldn't call this yourself.
