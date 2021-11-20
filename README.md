@@ -1,5 +1,5 @@
 # DJITelloPy
-## [中文文档](README_CN.md)
+## [中文文档 (Chinese version of this readme)](README_CN.md)
 
 DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf) and [Tello EDU SDK](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf). This library has the following features:
 
@@ -51,7 +51,8 @@ tello.land()
 ```
 
 ### More examples
-In the [examples](examples/) directory there are some code examples:
+In the [examples](examples/) directory there are some code examples.
+Comments in the examples are mostly in both english and chinese.
 
 - [taking a picture](examples/take-picture.py)
 - [recording a video](examples/record-video.py)
@@ -61,11 +62,11 @@ In the [examples](examples/) directory there are some code examples:
 - [fully featured manual control using pygame](examples/manual-control-pygame.py)
 
 ### Notes
-- If you are using the ```streamon``` command and the response is ```Unknown command``` means you have to update the Tello firmware. That can be done through the Tello app.
+- If you are using the `streamon` command and the response is `Unknown command` means you have to update the Tello firmware. That can be done through the Tello app.
 - Mission pad detection and navigation is only supported by the Tello EDU.
 - Bright environment is necessary for successful use of mission pads.
 - Connecting to an existing wifi network is only supported by the Tello EDU.
-- When connected to an existing wifi network video streaming is not available.
+- When connected to an existing wifi network video streaming is not available (TODO: needs confirmation with the new SDK3 `port` commands)
 
 ## Authors
 
