@@ -19,6 +19,10 @@ drones: Optional[dict] = {}
 client_socket: socket.socket
 
 
+class TelloException(Exception):
+    pass
+
+
 @enforce_types
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
@@ -231,7 +235,7 @@ class Tello:
         if key in state:
             return state[key]
         else:
-            raise Exception('Could not get state property: {}'.format(key))
+            raise TelloException('Could not get state property: {}'.format(key))
 
     def get_mission_pad_id(self) -> int:
         """Mission pad ID of the currently detected mission pad
@@ -511,7 +515,7 @@ class Tello:
         Internal method, you normally wouldn't call this yourself.
         """
         tries = 1 + self.retry_count
-        raise Exception("Command '{}' was unsuccessful for {} tries. Latest response:\t'{}'"
+        raise TelloException("Command '{}' was unsuccessful for {} tries. Latest response:\t'{}'"
                         .format(command, tries, response))
 
     def connect(self, wait_for_state=True):
@@ -529,7 +533,7 @@ class Tello:
                 time.sleep(1 / REPS)
 
             if not self.get_current_state():
-                raise Exception('Did not receive a state packet from the Tello')
+                raise TelloException('Did not receive a state packet from the Tello')
 
     def send_keepalive(self):
         """Send a keepalive packet to prevent the drone from landing after 15s
@@ -1020,8 +1024,8 @@ class BackgroundFrameRead:
             Tello.LOGGER.debug('trying to grab video frames...')
             self.container = av.open(self.address, timeout=(Tello.FRAME_GRAB_TIMEOUT, None))
         except av.error.ExitError:
-            raise Exception('Failed to grab video frames from video stream')
-        
+            raise TelloException('Failed to grab video frames from video stream')
+
         self.stopped = False
         self.worker = Thread(target=self.update_frame, args=(), daemon=True)
 
@@ -1042,8 +1046,8 @@ class BackgroundFrameRead:
                     self.container.close()
                     break
         except av.error.ExitError:
-            raise Exception('Do not have enough frames for decoding, please try again or increase video fps before get_frame_read()')
-                
+            raise TelloException('Do not have enough frames for decoding, please try again or increase video fps before get_frame_read()')
+
     def stop(self):
         """Stop the frame update worker
         Internal method, you normally wouldn't call this yourself.
