@@ -993,10 +993,14 @@ class Tello:
     def end(self):
         """Call this method when you want to end the tello object
         """
-        if self.is_flying:
-            self.land()
-        if self.stream_on:
-            self.streamoff()
+        try:
+            if self.is_flying:
+                self.land()
+            if self.stream_on:
+                self.streamoff()
+        except TelloException:
+            pass
+
         if self.background_frame_read is not None:
             self.background_frame_read.stop()
 
