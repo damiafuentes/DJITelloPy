@@ -554,6 +554,7 @@ class Tello:
         """Allows you to take off by throwing your drone within 5 seconds of this command
         """
         self.send_control_command("throwfly")
+        self.is_flying = True
 
     def takeoff(self):
         """Automatic takeoff.
