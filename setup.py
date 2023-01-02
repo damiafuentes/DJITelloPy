@@ -23,6 +23,8 @@ setuptools.setup(
     install_requires=[
         'numpy',
         'opencv-python',
+        'av'.
+        'pillow'
     ],
     python_requires='>=3.6',
     classifiers=[
