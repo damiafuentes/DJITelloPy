@@ -25,8 +25,11 @@ pip3 install djitellopy
 Using the commands below you can install the repository in an _editable_ way. This allows you to modify the library and use the modified version as if you had installed it regularly.
 
 ```
+sudo apt-get install libavcodec-dev libswscale-dev libopus-dev -y
 git clone https://github.com/damiafuentes/DJITelloPy.git
 cd DJITelloPy
+pip install -e .
+cd lib/libmedia_codec
 pip install -e .
 ```
 
@@ -88,3 +91,6 @@ Comments in the examples are mostly in both english and chinese.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
+
+
+
