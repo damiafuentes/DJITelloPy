@@ -2,6 +2,7 @@
 """
 
 # coding=utf-8
+import cv2
 import logging
 import socket
 import time
@@ -13,6 +14,7 @@ from .enforce_types import enforce_types
 import av
 import numpy as np
 
+from djitellopy.video_handler import VideoHandler
 
 threads_initialized = False
 drones: Optional[dict] = {}
@@ -106,6 +108,8 @@ class Tello:
         self.retry_count = retry_count
         self.last_received_command_timestamp = time.time()
         self.last_rc_control_timestamp = time.time()
+
+        self._video_handler = None
 
         if not threads_initialized:
             # Run Tello command responses UDP receiver on background
@@ -399,17 +403,17 @@ class Tello:
         address = address_schema.format(ip=self.VS_UDP_IP, port=self.VS_UDP_PORT)
         return address
 
-    def get_frame_read(self) -> 'BackgroundFrameRead':
-        """Get the BackgroundFrameRead object from the camera drone. Then, you just need to call
-        backgroundFrameRead.frame to get the actual frame received by the drone.
-        Returns:
-            BackgroundFrameRead
+    def start_video(self) -> 'None':
+        """Starts the videohandler. It automatically connects to the correct UDP address.
         """
-        if self.background_frame_read is None:
-            address = self.get_udp_video_address()
-            self.background_frame_read = BackgroundFrameRead(self, address)
-            self.background_frame_read.start()
-        return self.background_frame_read
+        self._video_handler = VideoHandler(camera_ip=self.VS_UDP_IP, camera_port=self.VS_UDP_PORT)
+
+    def get_latest_video_frame(self) -> 'np.array':
+        """This gets the latest video frame and converts it to RGB
+        """
+        frame = self._video_handler.read_video_frame(timeout=3, strategy="newest")
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        return frame
 
     def send_command_with_return(self, command: str, timeout: int = RESPONSE_TIMEOUT) -> str:
         """Send command to Tello and wait for its response.

@@ -24,7 +24,8 @@ setuptools.setup(
         'numpy',
         'opencv-python',
         'av',
-        'pillow'
+        'pillow',
+        'matplotlib'
     ],
     python_requires='>=3.6',
     classifiers=[
