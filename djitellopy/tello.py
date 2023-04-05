@@ -22,7 +22,6 @@ client_socket: socket.socket
 class TelloException(Exception):
     pass
 
-
 @enforce_types
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
@@ -97,7 +96,8 @@ class Tello:
 
     def __init__(self,
                  host=TELLO_IP,
-                 retry_count=RETRY_COUNT):
+                 retry_count=RETRY_COUNT,
+                 vs_udp=VS_UDP_PORT):
 
         global threads_initialized, client_socket, drones
 
@@ -125,6 +125,15 @@ class Tello:
         drones[host] = {'responses': [], 'state': {}}
 
         self.LOGGER.info("Tello instance was initialized. Host: '{}'. Port: '{}'.".format(host, Tello.CONTROL_UDP_PORT))
+
+        self.vs_udp_port = vs_udp
+
+
+    def change_vs_udp(self, udp_port):
+        """Change the UDP Port for sending video feed from the drone.
+        """
+        self.vs_udp_port = udp_port
+        self.send_control_command(f'port 8890 {self.vs_udp_port}')
 
     def get_own_udp_object(self):
         """Get own object from the global drones dict. This object is filled
@@ -395,8 +404,8 @@ class Tello:
     def get_udp_video_address(self) -> str:
         """Internal method, you normally wouldn't call this youself.
         """
-        address_schema = 'udp://{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
-        address = address_schema.format(ip=self.VS_UDP_IP, port=self.VS_UDP_PORT)
+        address_schema = 'udp://@{ip}:{port}'  # + '?overrun_nonfatal=1&fifo_size=5000'
+        address = address_schema.format(ip=self.VS_UDP_IP, port=self.vs_udp_port)
         return address
 
     def get_frame_read(self) -> 'BackgroundFrameRead':
@@ -516,7 +525,7 @@ class Tello:
         """
         tries = 1 + self.retry_count
         raise TelloException("Command '{}' was unsuccessful for {} tries. Latest response:\t'{}'"
-                        .format(command, tries, response))
+                             .format(command, tries, response))
 
     def connect(self, wait_for_state=True):
         """Enter SDK mode. Call this before any of the control functions.
@@ -534,6 +543,8 @@ class Tello:
 
             if not self.get_current_state():
                 raise TelloException('Did not receive a state packet from the Tello')
+
+        # self.change_vs_udp(self.vs_udp_port)
 
     def send_keepalive(self):
         """Send a keepalive packet to prevent the drone from landing after 15s
