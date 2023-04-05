@@ -22,6 +22,7 @@ client_socket: socket.socket
 class TelloException(Exception):
     pass
 
+
 @enforce_types
 class Tello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
@@ -543,8 +544,6 @@ class Tello:
 
             if not self.get_current_state():
                 raise TelloException('Did not receive a state packet from the Tello')
-
-        # self.change_vs_udp(self.vs_udp_port)
 
     def send_keepalive(self):
         """Send a keepalive packet to prevent the drone from landing after 15s
