@@ -5,7 +5,7 @@
 import logging
 import socket
 import time
-from threading import Thread
+from threading import Thread, Lock
 from typing import Optional, Union, Type, Dict
 
 from .enforce_types import enforce_types
@@ -1032,6 +1032,8 @@ class BackgroundFrameRead:
     def __init__(self, tello, address):
         self.address = address
         self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
+        self.frames = list()
+        self.lock = Lock()
 
         # Try grabbing frame with PyAV
         # According to issue #90 the decoder might need some time
@@ -1057,12 +1059,18 @@ class BackgroundFrameRead:
         """
         try:
             for frame in self.container.decode(video=0):
-                self.frame = np.array(frame.to_image())
+                with self.lock:
+                    self.frames.append(np.array(frame.to_image()))
+
                 if self.stopped:
                     self.container.close()
                     break
         except av.error.ExitError:
             raise TelloException('Do not have enough frames for decoding, please try again or increase video fps before get_frame_read()')
+    
+    def get_frame(self):
+        with self.lock:
+            return self.frames.pop(0)
 
     def stop(self):
         """Stop the frame update worker
