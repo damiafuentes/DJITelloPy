@@ -5,6 +5,7 @@
 import logging
 import socket
 import time
+from queue import Queue, Empty
 from threading import Thread, Lock
 from typing import Optional, Union, Type, Dict
 
@@ -1029,10 +1030,10 @@ class BackgroundFrameRead:
     backgroundFrameRead.frame to get the current frame.
     """
 
-    def __init__(self, tello, address):
+    def __init__(self, tello, address, maxsize = 10):
         self.address = address
         self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
-        self.frames = list()
+        self.frames = Queue(maxsize)
         self.lock = Lock()
 
         # Try grabbing frame with PyAV
@@ -1060,7 +1061,7 @@ class BackgroundFrameRead:
         try:
             for frame in self.container.decode(video=0):
                 with self.lock:
-                    self.frames.append(np.array(frame.to_image()))
+                    self.frames.put(np.array(frame.to_image()))
 
                 if self.stopped:
                     self.container.close()
@@ -1068,9 +1069,30 @@ class BackgroundFrameRead:
         except av.error.ExitError:
             raise TelloException('Do not have enough frames for decoding, please try again or increase video fps before get_frame_read()')
     
-    def get_frame(self):
+    def get_queued_frame(self):
+        """
+        Get a frame from the queue
+        """
         with self.lock:
-            return self.frames.pop(0)
+            try:
+                return self.frames.get(block=False)
+            except Empty:
+                return None
+
+    def get_latest_frame(self):
+        """
+        Get the latest frame from the queue
+        """
+        with self.lock:
+            if self.frames.not_empty():
+                return self.frames.queue[-1]
+        
+    def get_frame(self):
+        """
+        Access the frame variable directly
+        """
+        with self.lock:
+            return self.frame
 
     def stop(self):
         """Stop the frame update worker
