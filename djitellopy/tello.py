@@ -5,7 +5,7 @@
 import logging
 import socket
 import time
-from queue import Queue, Empty
+from collections import deque
 from threading import Thread, Lock
 from typing import Optional, Union, Type, Dict
 
@@ -1030,10 +1030,10 @@ class BackgroundFrameRead:
     backgroundFrameRead.frame to get the current frame.
     """
 
-    def __init__(self, tello, address, maxsize = 10):
+    def __init__(self, tello, address, maxsize = 32):
         self.address = address
         self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
-        self.frames = Queue(maxsize)
+        self.frames = deque([], maxsize)
         self.lock = Lock()
 
         # Try grabbing frame with PyAV
@@ -1060,8 +1060,9 @@ class BackgroundFrameRead:
         """
         try:
             for frame in self.container.decode(video=0):
+                self.frames.append(np.array(frame.to_image()))
                 with self.lock:
-                    self.frames.put(np.array(frame.to_image()))
+                    self.frame = frame
 
                 if self.stopped:
                     self.container.close()
@@ -1075,8 +1076,8 @@ class BackgroundFrameRead:
         """
         with self.lock:
             try:
-                return self.frames.get(block=False)
-            except Empty:
+                return self.frames.popleft()
+            except IndexError:
                 return None
 
     def get_latest_frame(self):
@@ -1084,15 +1085,18 @@ class BackgroundFrameRead:
         Get the latest frame from the queue
         """
         with self.lock:
-            if self.frames.not_empty():
-                return self.frames.queue[-1]
-        
+            try:
+                return self.frames.pop()
+            except IndexError:
+                return None
+
+    @property
     def get_frame(self):
         """
         Access the frame variable directly
         """
-        with self.lock:
-            return self.frame
+        with self._lock:
+            return self._frame
 
     def stop(self):
         """Stop the frame update worker
