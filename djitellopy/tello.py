@@ -410,7 +410,7 @@ class Tello:
         address = address_schema.format(ip=self.VS_UDP_IP, port=self.vs_udp_port)
         return address
 
-    def get_frame_read(self) -> 'BackgroundFrameRead':
+    def get_frame_read(self, with_queue = False, max_queue_len = 32) -> 'BackgroundFrameRead':
         """Get the BackgroundFrameRead object from the camera drone. Then, you just need to call
         backgroundFrameRead.frame to get the actual frame received by the drone.
         Returns:
@@ -418,7 +418,7 @@ class Tello:
         """
         if self.background_frame_read is None:
             address = self.get_udp_video_address()
-            self.background_frame_read = BackgroundFrameRead(self, address)
+            self.background_frame_read = BackgroundFrameRead(self, address, with_queue, max_queue_len)
             self.background_frame_read.start()
         return self.background_frame_read
 
@@ -1030,11 +1030,12 @@ class BackgroundFrameRead:
     backgroundFrameRead.frame to get the current frame.
     """
 
-    def __init__(self, tello, address, maxsize = 32):
+    def __init__(self, tello, address, with_queue = False, maxsize = 32):
         self.address = address
         self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
         self.frames = deque([], maxsize)
         self.lock = Lock()
+        self.with_queue = with_queue
 
         # Try grabbing frame with PyAV
         # According to issue #90 the decoder might need some time
@@ -1060,9 +1061,11 @@ class BackgroundFrameRead:
         """
         try:
             for frame in self.container.decode(video=0):
-                self.frames.append(np.array(frame.to_image()))
-                with self.lock:
-                    self.frame = frame
+                if self.with_queue:
+                    self.frames.append(np.array(frame.to_image()))
+                else:
+                    with self.lock:
+                        self.frame = frame
 
                 if self.stopped:
                     self.container.close()
@@ -1080,21 +1083,14 @@ class BackgroundFrameRead:
             except IndexError:
                 return None
 
-    def get_latest_frame(self):
-        """
-        Get the latest frame from the queue
-        """
-        with self.lock:
-            try:
-                return self.frames.pop()
-            except IndexError:
-                return None
-
     @property
-    def get_frame(self):
+    def frame(self):
         """
         Access the frame variable directly
         """
+        if self._with_queue:
+            return self.get_queued_frame()
+
         with self._lock:
             return self._frame
 
