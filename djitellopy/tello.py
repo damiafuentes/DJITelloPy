@@ -1065,7 +1065,7 @@ class BackgroundFrameRead:
                     self.frames.append(np.array(frame.to_image()))
                 else:
                     with self.lock:
-                        self.frame = frame
+                        self.frame = np.array(frame.to_image())
 
                 if self.stopped:
                     self.container.close()
@@ -1088,11 +1088,15 @@ class BackgroundFrameRead:
         """
         Access the frame variable directly
         """
-        if self._with_queue:
+        if self.with_queue:
             return self.get_queued_frame()
 
-        with self._lock:
+        with self.lock:
             return self._frame
+
+    @frame.setter
+    def frame(self, value):
+        self._frame = value
 
     def stop(self):
         """Stop the frame update worker
