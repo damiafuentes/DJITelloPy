@@ -1032,9 +1032,9 @@ class BackgroundFrameRead:
 
     def __init__(self, tello, address, with_queue = False, maxsize = 32):
         self.address = address
+        self.lock = Lock()
         self.frame = np.zeros([300, 400, 3], dtype=np.uint8)
         self.frames = deque([], maxsize)
-        self.lock = Lock()
         self.with_queue = with_queue
 
         # Try grabbing frame with PyAV
