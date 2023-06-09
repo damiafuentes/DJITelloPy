@@ -601,6 +601,10 @@ class Tello:
         self.send_control_command("streamoff")
         self.stream_on = False
 
+        if self.background_frame_read is not None:
+            self.background_frame_read.stop()
+            self.background_frame_read = None
+
     def emergency(self):
         """Stop all motors immediately.
         """
