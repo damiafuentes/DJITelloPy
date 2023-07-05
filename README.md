@@ -1,5 +1,5 @@
 # DJITelloPy
-## [中文文档 (Chinese version of this readme)](README_CN.md)
+# [中文文档 (Chinese version of this readme)](README_CN.md)
 
 DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf) and [Tello EDU SDK](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf). This library has the following features:
 
@@ -11,7 +11,7 @@ DJI Tello drone python interface using the official [Tello SDK](https://dl-cdn.r
 
 Feel free to contribute!
 
-## Install using pip
+# Install using pip
 ```
 pip install djitellopy
 ```
@@ -21,7 +21,7 @@ For Linux distributions with both python2 and python3 (e.g. Debian, Ubuntu, ...)
 pip3 install djitellopy
 ```
 
-## Install in developer mode
+# Install in developer mode
 Using the commands below you can install the repository in an _editable_ way. This allows you to modify the library and use the modified version as if you had installed it regularly.
 
 ```
