@@ -1,0 +1,17 @@
+# Read the Docs configuration file
+# used for generating https://djitellopy.readthedocs.io/en/latest/
+
+version: 2
+
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+
+python:
+  install:
+    - requirements: doc-requirements.txt
+
+mkdocs:
+  configuration: mkdocs.yml
+  fail_on_warning: false
