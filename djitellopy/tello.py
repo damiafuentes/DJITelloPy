@@ -42,7 +42,8 @@ class Tello:
 
     # Video stream, server socket
     VS_UDP_IP = '0.0.0.0'
-    VS_UDP_PORT = 11111
+    DEFAULT_VS_UDP_PORT = 11111
+    VS_UDP_PORT = DEFAULT_VS_UDP_PORT
 
     CONTROL_UDP_PORT = 8889
     STATE_UDP_PORT = 8890
@@ -585,13 +586,15 @@ class Tello:
         """Turn on video streaming. Use `tello.get_frame_read` afterwards.
         Video Streaming is supported on all tellos when in AP mode (i.e.
         when your computer is connected to Tello-XXXXXX WiFi ntwork).
-        Currently Tello EDUs do not support video streaming while connected
-        to a WiFi-network.
+        Tello EDUs support video streaming while connected to a
+        WiFi-network via SDK 3.
 
         !!! Note:
             If the response is 'Unknown command' you have to update the Tello
             firmware. This can be done using the official Tello app.
         """
+        if self.DEFAULT_VS_UDP_PORT != self.vs_udp_port:
+            self.change_vs_udp(self.vs_udp_port)
         self.send_control_command("streamon")
         self.stream_on = True
 
