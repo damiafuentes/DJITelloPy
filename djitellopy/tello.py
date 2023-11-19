@@ -720,7 +720,7 @@ class Tello:
         self.send_control_command(cmd)
 
     def curve_xyz_speed(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int):
-        """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
+        """Fly to x2 y2 z2 in a curve via x1 y1 z1. Speed defines the traveling speed in cm/s.
 
         - Both points are relative to the current position
         - The current position and both points must form a circle arc.
@@ -753,7 +753,7 @@ class Tello:
         self.send_control_command(cmd)
 
     def curve_xyz_speed_mid(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int, mid: int):
-        """Fly to x2 y2 z2 in a curve via x2 y2 z2. Speed defines the traveling speed in cm/s.
+        """Fly to x2 y2 z2 in a curve via x1 y1 z1. Speed defines the traveling speed in cm/s.
 
         - Both points are relative to the mission pad with id mid.
         - The current position and both points must form a circle arc.
