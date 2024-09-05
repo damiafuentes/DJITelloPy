@@ -191,7 +191,8 @@ class Tello:
                     continue
 
                 data = data.decode('ASCII')
-                drones[address]['state'] = Tello.parse_state(data)
+                data = Tello.parse_state(data)
+                drones[address]['state'] = {'timestamp': int(time.time() * 1_000_000), **data}
 
             except Exception as e:
                 Tello.LOGGER.error(e)
