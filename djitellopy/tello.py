@@ -1022,6 +1022,7 @@ class Tello:
 
         if self.background_frame_read is not None:
             self.background_frame_read.stop()
+            self.background_frame_read = None
 
         host = self.address[0]
         if host in drones:
