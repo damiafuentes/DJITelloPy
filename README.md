@@ -69,12 +69,14 @@ Comments in the examples are mostly in both english and chinese.
 - When connected to an existing wifi network video streaming is not available (TODO: needs confirmation with the new SDK3 `port` commands)
 
 ## DJITelloPy in the media and in the wild
-- \>1.5 Million views Youtube: [Drone Programming With Python Course](https://youtu.be/LmEcyQnfpDA?t=1282)
+- \>6 Million views Youtube: [Drone Programming With Python Course](https://youtu.be/LmEcyQnfpDA?t=1282)
 - German magazine "Make": ["KI steuert Follow-Me-Drohne" (paywall)](https://www.heise.de/select/make/2021/6/2116016361503211330), [authors notes](https://www.jentsch.io/ki-artikel-im-aktuellen-make-magazin-6-21/), [github repo](https://github.com/msoftware/tello-tracking)
 - Webinar on learn.droneblocks.io: ["DJITelloPy Drone Coding"](https://learn.droneblocks.io/p/djitellopy), [github repo](https://learn.droneblocks.io/p/djitellopy)
 - Universities & Schools using DJITelloPy in projects or in class:
     - [Ball State University in Muncie, Indiana](https://www.bsu.edu/)
     - [Technical University Kaiserslautern](https://www.uni-kl.de/)
+    - [Lehrereinnenfortbildung Baden-Württemberg](https://lehrerfortbildung-bw.de/zsl_as_es/)
+    - [Seminar für Ausbildung und Fortbildung der Lehrkräfte Freiburg (Berufliche Schulen)](https://bs-fr.seminare-bw.de/,Lde/Startseite)
     - [Sha Tin College, Hong Kong](https://shatincollege.edu.hk/)
     - [University of São Paulo](https://www5.usp.br/)
     - [add yours...](https://github.com/damiafuentes/DJITelloPy/edit/master/README.md)
