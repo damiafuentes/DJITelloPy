@@ -5,6 +5,7 @@
 import logging
 import socket
 import time
+from datetime import datetime
 from collections import deque
 from threading import Thread, Lock
 from typing import Optional, Union, Type, Dict
@@ -191,7 +192,9 @@ class Tello:
                     continue
 
                 data = data.decode('ASCII')
-                drones[address]['state'] = Tello.parse_state(data)
+                data = Tello.parse_state(data)
+                data['received_at'] = datetime.now()
+                drones[address]['state'] = data
 
             except Exception as e:
                 Tello.LOGGER.error(e)
@@ -248,6 +251,14 @@ class Tello:
             return state[key]
         else:
             raise TelloException('Could not get state property: {}'.format(key))
+
+    def get_last_state_update(self) -> datetime:
+        """Get the datetime of when the last state packet was received.
+        You may use this function to check the age of values returned by all other get_* functions.
+        Returns:
+            datetime: last state update
+        """
+        return self.get_state_field('received_at')
 
     def get_mission_pad_id(self) -> int:
         """Mission pad ID of the currently detected mission pad
