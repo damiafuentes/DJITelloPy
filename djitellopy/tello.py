@@ -730,6 +730,11 @@ class Tello:
         cmd = 'go {} {} {} {}'.format(x, y, z, speed)
         self.send_control_command(cmd)
 
+    def stop(self):
+        """Hovers in the air. Works at any time.
+        """
+        self.send_control_command("stop")
+
     def curve_xyz_speed(self, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, speed: int):
         """Fly to x2 y2 z2 in a curve via x1 y1 z1. Speed defines the traveling speed in cm/s.
 
