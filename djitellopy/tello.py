@@ -39,7 +39,7 @@ class Tello:
     TIME_BTW_COMMANDS = 0.1  # in seconds
     TIME_BTW_RC_CONTROL_COMMANDS = 0.001  # in seconds
     RETRY_COUNT = 3  # number of retries after a failed command
-    TELLO_IP = '192.168.10.1'  # Tello IP address
+    TELLO_IP = '192.168.1.102'  # Tello IP address
 
     # Video stream, server socket
     VS_UDP_IP = '0.0.0.0'
