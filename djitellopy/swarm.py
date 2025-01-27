@@ -81,7 +81,7 @@ class TelloSwarm:
         current [Tello][tello] instance.
 
         ```python
-        swarm.parallel(lambda i, tello: tello.land())
+        swarm.sequential(lambda i, tello: tello.land())
         ```
         """
 
